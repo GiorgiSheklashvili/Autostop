@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Autostop.iml" filepath="$PROJECT_DIR$/Autostop.iml" />
+      <module fileurl="file://$PROJECT_DIR$/AutoStop.iml" filepath="$PROJECT_DIR$/AutoStop.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
