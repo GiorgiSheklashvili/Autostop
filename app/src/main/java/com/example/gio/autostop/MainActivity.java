@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public final static int REQUEST_FINE_LOCATION = 0;
     //    public final static int REQUEST_COARSE_LOCATION =1;
     public final static int MINUTE = 60 * MILISECONDS_PER_SECOND;
-
+    public Boolean mRequestingLocationUpdates;
     @Override
     protected void onStart() {
         super.onStart();
@@ -40,9 +40,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     protected void onResume() {
         super.onResume();
-        if (mGoogleApiClient.isConnected())
+        if (mGoogleApiClient.isConnected() && mRequestingLocationUpdates==false)
             requestLocationUpdates();
     }
+
 
     @Override
     protected void onStop() {
@@ -54,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mRequestingLocationUpdates=false;
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -68,10 +70,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                        @Override
                                        public void onClick(View v) {
                                            displayMap(v);
-
                                        }
                                    }
         );
+
     }
 
     public void displayMap(View view) {
@@ -93,6 +95,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     protected void onPause() {
         super.onPause();
+        stopLocationUpdates();
+    }
+    protected void stopLocationUpdates(){
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
     }
 
@@ -140,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 // aq shemodis pirvelad motxovnisas da aseve motxovnis uaryopis shemtvevashi tu momxmarebelma tan never ask again monishna
                 requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
             }
+            mRequestingLocationUpdates=true;
 
 
     }
@@ -174,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     @Override
     public void onLocationChanged(Location location) {
-        Toast.makeText(this,"Location Changed; "+location.getLatitude()+" "+location.getLongitude(),Toast.LENGTH_LONG).show();
+        Toast.makeText(this,"Location Changed; "+location.getLatitude()+" "+location.getLongitude(),Toast.LENGTH_SHORT).show();
 
     }
 }
