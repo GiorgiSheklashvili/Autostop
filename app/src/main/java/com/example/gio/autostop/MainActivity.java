@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import com.google.android.gms.location.LocationListener;
+
+import android.location.LocationManager;
 import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -19,16 +21,17 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener{
         public Button button1;
     public GoogleApiClient mGoogleApiClient;
-    public LocationRequest LocationRequest;
+    public LocationRequest locationRequest;
     public int permissionRequestCounter =0;
     public FusedLocationProviderApi LocationProvider = LocationServices.FusedLocationApi;
     public final static int MILISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
-    //    public final static int REQUEST_COARSE_LOCATION =1;
     public final static int MINUTE = 60 * MILISECONDS_PER_SECOND;
     public Boolean mRequestingLocationUpdates;
     @Override
@@ -40,8 +43,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     protected void onResume() {
         super.onResume();
-        if (mGoogleApiClient.isConnected() && mRequestingLocationUpdates==false)
-            requestLocationUpdates();
+//        if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates)
+//            requestLocationUpdates();
     }
 
 
@@ -50,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onStop();
         mGoogleApiClient.disconnect();
     }
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,10 +66,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
-        LocationRequest = new LocationRequest();
-        LocationRequest.setInterval(MINUTE);
-        LocationRequest.setFastestInterval(15 * MILISECONDS_PER_SECOND);
-        LocationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest = new LocationRequest();
+        locationRequest.setInterval(MINUTE);
+        locationRequest.setFastestInterval(15 * MILISECONDS_PER_SECOND);
+        locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
         button1 = (Button) findViewById(R.id.button1);
         button1.setOnClickListener(new View.OnClickListener() {
                                        @Override
@@ -78,11 +83,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     public void displayMap(View view) {
         Intent intent = new Intent(this, MapsActivity.class);
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED)
         startActivity(intent);
-        else
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
+        //        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+//                == PackageManager.PERMISSION_GRANTED)
+//        else
+//            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
     }
 
     @Override
@@ -116,20 +121,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         return super.onOptionsItemSelected(item);
     }
 
-
-    @Override
-    public void onConnected(Bundle bundle) {
-        requestLocationUpdates();
-    }
     private void requestLocation(){
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
-                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, LocationRequest, MainActivity.this);
+                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, MainActivity.this);
             } else
                 requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
         }
     }
+    @Override
+    public void onConnected(Bundle bundle) {
+//        requestLocationUpdates();
+    }
+
 
     private void requestLocationUpdates() {
             // Should we show an explanation?
@@ -150,23 +155,23 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-
-        switch (requestCode) {
-            case REQUEST_FINE_LOCATION: {
-                if (grantResults.length==1
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    requestLocation();
-
-                } else {
-                    Toast.makeText(MainActivity.this, "Permission was blocked", Toast.LENGTH_SHORT).show();
-
-                }
-            }
-        }
-
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+//
+//        switch (requestCode) {
+//            case REQUEST_FINE_LOCATION: {
+//                if (grantResults.length==1
+//                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                    requestLocation();
+//
+//                } else {
+//                    Toast.makeText(MainActivity.this, "Permission was blocked", Toast.LENGTH_SHORT).show();
+//
+//                }
+//            }
+//        }
+//
+//    }
 
     @Override
     public void onConnectionSuspended(int i) {
@@ -180,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     @Override
     public void onLocationChanged(Location location) {
-        Toast.makeText(this,"Location Changed; "+location.getLatitude()+" "+location.getLongitude(),Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this,"Location Changed; "+location.getLatitude()+" "+location.getLongitude(),Toast.LENGTH_SHORT).show();
 
     }
 }
