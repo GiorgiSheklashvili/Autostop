@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import com.google.android.gms.location.LocationListener;
+
 import android.os.Build;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -25,12 +26,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     private GoogleMap mMap;// Might be null if Google Play services APK is not available.
     public int permissionRequestCounter =0;
     public GoogleApiClient mGoogleApiClient;
-    public Boolean mRequestingLocationUpdates;
+    public Boolean locationRequestGranted;
     public LocationRequest locationRequest;
     public final static int MILISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
     public final static int MINUTE = 60 * MILISECONDS_PER_SECOND;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,7 +39,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        mRequestingLocationUpdates=false;
+        locationRequestGranted =false;
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -65,14 +65,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
-//        if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates)
-//            requestLocationUpdates();
+//        if (mGoogleApiClient.isConnected() && !locationRequestGranted)
+//            startLocationUpdates();
     }
 
     @Override
     public void onConnected(Bundle bundle) {
-        if(mRequestingLocationUpdates)
-        requestLocation();
+        if(locationRequestGranted)
+            startLocationUpdates();
     }
 
     @Override
@@ -105,11 +105,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     protected void onPause() {
         super.onPause();
         if (mGoogleApiClient.isConnected())
-        stopLocationUpdates();
+            stopLocationUpdates();
 
     }
 
-    private void requestLocationUpdates() {
+    private void requestLocation() {
         // Should we show an explanation?
         if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
             Toast.makeText(MapsActivity.this, "Location access is required to display your location", Toast.LENGTH_SHORT).show();
@@ -124,19 +124,19 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
             // aq shemodis pirvelad motxovnisas da aseve motxovnis uaryopis shemtvevashi tu momxmarebelma tan never ask again monishna
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
         }
-        mRequestingLocationUpdates=true;
-
-
+        locationRequestGranted =true;
     }
 
-    private void requestLocation(){
+    private void startLocationUpdates(){
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
                 LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, MapsActivity.this);
-            } else
+            } else {
                 requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
+            }
         }
+
     }
 
     @Override
@@ -157,6 +157,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
             } else if (mMap != null) {
                 // Access to the location has been granted to the app.
                 mMap.setMyLocationEnabled(true);
+                locationRequestGranted =true;
             }
         }
     }
@@ -178,12 +179,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     }
     @Override
     public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
-        return false;
+            return false;
     }
 
     @Override
     public void onLocationChanged(Location location) {
+//        Toast.makeText(MapsActivity.this, "Latitude:"+location.getLatitude()+"Longtitude"+location.getLongitude(), Toast.LENGTH_SHORT).show();
 
     }
 
