@@ -1,14 +1,19 @@
 package com.example.gio.autostop;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import com.google.android.gms.location.LocationListener;
 
+import android.location.LocationManager;
 import android.os.Build;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -31,6 +36,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     public final static int MILISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
     public final static int MINUTE = 60 * MILISECONDS_PER_SECOND;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +55,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
         locationRequest.setInterval(MINUTE);
         locationRequest.setFastestInterval(15 * MILISECONDS_PER_SECOND);
         locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            checkGps();
+        }
     }
 
     @Override
@@ -65,8 +75,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
-//        if (mGoogleApiClient.isConnected() && !locationRequestGranted)
-//            startLocationUpdates();
+        if (mGoogleApiClient.isConnected() && locationRequestGranted)
+            startLocationUpdates();
     }
 
     @Override
@@ -109,23 +119,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
 
     }
 
-    private void requestLocation() {
-        // Should we show an explanation?
-        if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
-            Toast.makeText(MapsActivity.this, "Location access is required to display your location", Toast.LENGTH_SHORT).show();
-            // aq shemodis tu motxovnaze uari tqva momxmarebelma magram never ask me again ar monishna
-            if(permissionRequestCounter==0){//amis gareshe meorejer da shemdeg motxovnebze tu momxmarebeli
-                // never ask me again-is gareshe monishnavda deny-s motxovna icikleboda
-
-                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
-                permissionRequestCounter++;
-            }
-        } else {
-            // aq shemodis pirvelad motxovnisas da aseve motxovnis uaryopis shemtvevashi tu momxmarebelma tan never ask again monishna
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
-        }
-        locationRequestGranted =true;
-    }
 
     private void startLocationUpdates(){
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
@@ -149,7 +142,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
-                // Permission to access the location is missing.
+                    // Permission to access the location is missing.
                 if (permissionRequestCounter == 0) {
                     requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
                     permissionRequestCounter++;
@@ -159,6 +152,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
                 mMap.setMyLocationEnabled(true);
                 locationRequestGranted =true;
             }
+
         }
     }
     @Override
@@ -169,6 +163,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
                 if (grantResults.length==1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     enableMyLocation();
+                    checkGps();
 
                 } else {
                     Toast.makeText(MapsActivity.this, "Permission was blocked", Toast.LENGTH_SHORT).show();
@@ -179,16 +174,38 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     }
     @Override
     public boolean onMyLocationButtonClick() {
-            return false;
+        checkGps();
+        return false;
     }
-
+    public void checkGps(){
+        final LocationManager manager=(LocationManager) getSystemService( Context.LOCATION_SERVICE );
+        if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+            buildAlertMessageNoGps();
+        }
+    }
     @Override
     public void onLocationChanged(Location location) {
-//        Toast.makeText(MapsActivity.this, "Latitude:"+location.getLatitude()+"Longtitude"+location.getLongitude(), Toast.LENGTH_SHORT).show();
 
     }
 
     private void setUpMap() {
+    }
+    private void buildAlertMessageNoGps() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                        startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                        dialog.cancel();
+                    }
+                });
+        final AlertDialog alert = builder.create();
+        alert.show();
     }
 
 }
