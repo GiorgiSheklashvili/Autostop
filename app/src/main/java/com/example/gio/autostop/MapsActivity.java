@@ -138,7 +138,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
     }
-    private void enableMyLocation() {
+    public void enableMyLocation() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
