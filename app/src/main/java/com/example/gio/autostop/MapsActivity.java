@@ -24,18 +24,24 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 
+import java.text.DateFormat;
+import java.util.Date;
 
 
 public class MapsActivity extends FragmentActivity implements LocationListener,GoogleApiClient.OnConnectionFailedListener,OnMapReadyCallback,GoogleMap.OnMyLocationButtonClickListener,GoogleApiClient.ConnectionCallbacks{
 
     private GoogleMap mMap;// Might be null if Google Play services APK is not available.
-    public int permissionRequestCounter =0;
+    public int permissionRequestCounter;
     public GoogleApiClient mGoogleApiClient;
-    public Boolean locationRequestGranted;
+    public Boolean startedlocationupdate;
     public LocationRequest locationRequest;
+    public Location mCurrentLocation;
+    protected String mLastUpdateTime;
     public final static int MILISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
     public final static int MINUTE = 60 * MILISECONDS_PER_SECOND;
+    protected final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
+    protected final static String LOCATION_KEY = "location-key";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +51,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        locationRequestGranted =false;
+        startedlocationupdate=false;
+        permissionRequestCounter=0;
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -59,6 +66,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
                 == PackageManager.PERMISSION_GRANTED) {
             checkGps();
         }
+        updateValuesFromBundle(savedInstanceState);
     }
 
     @Override
@@ -75,13 +83,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
-        if (mGoogleApiClient.isConnected() && locationRequestGranted)
+        if (mGoogleApiClient.isConnected() && !startedlocationupdate)
             startLocationUpdates();
     }
 
     @Override
     public void onConnected(Bundle bundle) {
-        if(locationRequestGranted)
+        if(!startedlocationupdate)
             startLocationUpdates();
     }
 
@@ -109,12 +117,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     }
     protected void stopLocationUpdates(){
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        startedlocationupdate=false;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (mGoogleApiClient.isConnected())
+        if (mGoogleApiClient.isConnected() && startedlocationupdate)
             stopLocationUpdates();
 
     }
@@ -125,8 +134,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
                 LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, MapsActivity.this);
+                startedlocationupdate=true;
             } else {
-                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
+                if (permissionRequestCounter == 0) {
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
+                    permissionRequestCounter++;
+                }
             }
         }
 
@@ -150,7 +163,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
             } else if (mMap != null) {
                 // Access to the location has been granted to the app.
                 mMap.setMyLocationEnabled(true);
-                locationRequestGranted =true;
             }
 
         }
@@ -185,7 +197,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     }
     @Override
     public void onLocationChanged(Location location) {
-
+        mCurrentLocation=location;
+        mLastUpdateTime= DateFormat.getTimeInstance().format(new Date());
     }
 
     private void setUpMap() {
@@ -208,4 +221,20 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
         alert.show();
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY, startedlocationupdate);
+        savedInstanceState.putParcelable(LOCATION_KEY, mCurrentLocation);
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    private void updateValuesFromBundle(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            if (savedInstanceState.keySet().contains(REQUESTING_LOCATION_UPDATES_KEY))
+                startedlocationupdate = savedInstanceState.getBoolean(REQUESTING_LOCATION_UPDATES_KEY);
+            if (savedInstanceState.keySet().contains(LOCATION_KEY))
+                mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
+
+        }
+    }
 }
