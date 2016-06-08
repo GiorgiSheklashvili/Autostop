@@ -5,15 +5,24 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Geocoder;
 import android.location.Location;
+
 import com.google.android.gms.location.LocationListener;
 
 import android.location.LocationManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Parcelable;
+import android.os.ResultReceiver;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -28,20 +37,29 @@ import java.text.DateFormat;
 import java.util.Date;
 
 
-public class MapsActivity extends FragmentActivity implements LocationListener,GoogleApiClient.OnConnectionFailedListener,OnMapReadyCallback,GoogleMap.OnMyLocationButtonClickListener,GoogleApiClient.ConnectionCallbacks{
+public class MapsActivity extends FragmentActivity implements LocationListener, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleApiClient.ConnectionCallbacks {
 
-    private GoogleMap mMap;// Might be null if Google Play services APK is not available.
+
     public int permissionRequestCounter;
     public GoogleApiClient mGoogleApiClient;
     public Boolean startedlocationupdate;
     public LocationRequest locationRequest;
     public Location mCurrentLocation;
-    protected String mLastUpdateTime;
     public final static int MILISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
     public final static int MINUTE = 60 * MILISECONDS_PER_SECOND;
+    protected String mLastUpdateTime;
     protected final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     protected final static String LOCATION_KEY = "location-key";
+    protected static final String ADDRESS_REQUESTED_KEY = "address-request-pending";
+    protected static final String LOCATION_ADDRESS_KEY = "location-address";
+    protected static final String TAG = "main-activity";
+    protected boolean mAddressRequested;
+    protected String mAddressOutput;
+    protected TextView mLocationAddressTextView;
+    private AddressResultReceiver mResultReceiver;
+    private GoogleMap mMap;// Might be null if Google Play services APK is not available.
+    ProgressBar mProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +69,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        startedlocationupdate=false;
-        permissionRequestCounter=0;
+        startedlocationupdate = false;
+        permissionRequestCounter = 0;
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -66,11 +84,18 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
                 == PackageManager.PERMISSION_GRANTED) {
             checkGps();
         }
+        mResultReceiver = new AddressResultReceiver(new Handler());
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
+        mAddressRequested = false;
+        mAddressOutput = "";
+        mLocationAddressTextView=(TextView) findViewById(R.id.address);
+        updateUIWidgets();
         updateValuesFromBundle(savedInstanceState);
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + connectionResult.getErrorCode());
     }
 
     @Override
@@ -87,14 +112,27 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
             startLocationUpdates();
     }
 
+
     @Override
     public void onConnected(Bundle bundle) {
         if(!startedlocationupdate)
             startLocationUpdates();
+        if (mCurrentLocation != null) {
+
+            if (!Geocoder.isPresent()) {
+                Toast.makeText(this, R.string.no_geocoder_available, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (mAddressRequested) {
+                startIntentService();
+            }
+        }
     }
 
     @Override
     public void onConnectionSuspended(int i) {
+        mGoogleApiClient.connect();
     }
 
     @Override
@@ -199,6 +237,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     public void onLocationChanged(Location location) {
         mCurrentLocation=location;
         mLastUpdateTime= DateFormat.getTimeInstance().format(new Date());
+        fetchAddressHandler();
     }
 
     private void setUpMap() {
@@ -225,6 +264,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY, startedlocationupdate);
         savedInstanceState.putParcelable(LOCATION_KEY, mCurrentLocation);
+        savedInstanceState.putBoolean(ADDRESS_REQUESTED_KEY, mAddressRequested);
+        savedInstanceState.putString(LOCATION_ADDRESS_KEY, mAddressOutput);
         super.onSaveInstanceState(savedInstanceState);
     }
 
@@ -234,7 +275,56 @@ public class MapsActivity extends FragmentActivity implements LocationListener,G
                 startedlocationupdate = savedInstanceState.getBoolean(REQUESTING_LOCATION_UPDATES_KEY);
             if (savedInstanceState.keySet().contains(LOCATION_KEY))
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
+            if (savedInstanceState.keySet().contains(ADDRESS_REQUESTED_KEY)) {
+                mAddressRequested = savedInstanceState.getBoolean(ADDRESS_REQUESTED_KEY);
+            }
+            if (savedInstanceState.keySet().contains(LOCATION_ADDRESS_KEY)) {
+                mAddressOutput = savedInstanceState.getString(LOCATION_ADDRESS_KEY);
+                displayAddressOutput();
+        }
+
+    }
 
         }
+    private void updateUIWidgets() {
+        if (mAddressRequested) {
+            mProgressBar.setVisibility(ProgressBar.VISIBLE);
+        } else {
+            mProgressBar.setVisibility(ProgressBar.GONE);
+        }
     }
+    public void fetchAddressHandler(){
+        if (mGoogleApiClient.isConnected() && mCurrentLocation != null) {
+            startIntentService();
+        }
+        mAddressRequested = true;
+        updateUIWidgets();
+    }
+
+    private void startIntentService() {
+        Intent intent = new Intent(this, FetchAddressIntentService.class);
+        intent.putExtra(Constants.RECEIVER, mResultReceiver);
+        intent.putExtra(Constants.LOCATION_DATA_EXTRA, mCurrentLocation);
+        startService(intent);
+    }
+    protected void displayAddressOutput() {
+        mLocationAddressTextView.setText(mAddressOutput);
+    }
+
+    class AddressResultReceiver extends ResultReceiver {
+        private int CREATOR;
+        public AddressResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            mAddressOutput = resultData.getString(Constants.RESULT_DATA_KEY);
+            displayAddressOutput();
+            mAddressRequested = false;
+            updateUIWidgets();
+            super.onReceiveResult(resultCode, resultData);
+        }
+    }
+
 }

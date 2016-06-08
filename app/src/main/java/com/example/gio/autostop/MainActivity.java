@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
         button1.setOnClickListener(new View.OnClickListener() {
                                        @Override
                                        public void onClick(View v) {
-                                           displayMap(v);
+                                           displayMap();
                                        }
                                    }
         );
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void displayMap(View view) {
+    public void displayMap() {
         Intent intent = new Intent(this, MapsActivity.class);
         startActivity(intent);
     }
