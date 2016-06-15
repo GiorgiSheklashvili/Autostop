@@ -4,6 +4,8 @@ package com.example.gio.autostop;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -14,8 +16,6 @@ import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
     public Button button1;
-    public MapsActivity x=new MapsActivity();
-    public final static int REQUEST_FINE_LOCATION = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

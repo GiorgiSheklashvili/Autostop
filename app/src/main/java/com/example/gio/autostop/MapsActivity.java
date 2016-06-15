@@ -11,11 +11,12 @@ import android.location.Location;
 import com.google.android.gms.location.LocationListener;
 
 import android.location.LocationManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
-import android.os.Parcelable;
 import android.os.ResultReceiver;
-import android.support.v4.app.ActivityCompat;
+import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -32,12 +33,20 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.text.DateFormat;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 
-public class MapsActivity extends FragmentActivity implements LocationListener, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleApiClient.ConnectionCallbacks {
+public class MapsActivity extends FragmentActivity implements LocationListener,
+        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
+        GoogleApiClient.ConnectionCallbacks,GoogleMap.OnMapLongClickListener {
 
 
     public int permissionRequestCounter;
@@ -90,6 +99,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener, 
         mAddressOutput = "";
         mLocationAddressTextView=(TextView) findViewById(R.id.address);
         updateUIWidgets();
+        mMap.setOnMapLongClickListener(this);
+        deviceUniqueNumber();
         updateValuesFromBundle(savedInstanceState);
     }
 
@@ -293,6 +304,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener, 
             mProgressBar.setVisibility(ProgressBar.GONE);
         }
     }
+
     public void fetchAddressHandler(){
         if (mGoogleApiClient.isConnected() && mCurrentLocation != null) {
             startIntentService();
@@ -311,6 +323,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener, 
         mLocationAddressTextView.setText(mAddressOutput);
     }
 
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+        mMap.addMarker(new MarkerOptions().position(latLng).title(latLng.toString()));
+    }
+
     class AddressResultReceiver extends ResultReceiver {
         private int CREATOR;
         public AddressResultReceiver(Handler handler) {
@@ -326,5 +343,36 @@ public class MapsActivity extends FragmentActivity implements LocationListener, 
             super.onReceiveResult(resultCode, resultData);
         }
     }
+    public void deviceUniqueNumber(){
+        String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
 
+        Toast.makeText(this,deviceId+" "+getWifiMacAddress(),Toast.LENGTH_SHORT).show();
+    }
+        public static String getWifiMacAddress() {
+        try {
+            String interfaceName = "wlan0";
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                if (!intf.getName().equalsIgnoreCase(interfaceName)){
+                    continue;
+                }
+                byte[] mac = intf.getHardwareAddress();
+                if (mac==null){
+                    return "";
+                }
+
+                StringBuilder buf = new StringBuilder();
+                for (byte aMac : mac) {
+                    buf.append(String.format("%02X:", aMac));
+                }
+                if (buf.length()>0) {
+                    buf.deleteCharAt(buf.length() - 1);
+                }
+                return buf.toString();
+            }
+        } catch (Exception ex) {
+            Log.i("getWifiMacAddress","exception in getWifiMacAddress");
+        }
+        return "";
+    }
 }
