@@ -8,11 +8,12 @@ import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.location.Location;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.LocationListener;
 
 import android.location.LocationManager;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.ResultReceiver;
@@ -34,11 +35,17 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.net.InetAddress;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.lang.reflect.Array;
 import java.net.NetworkInterface;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -48,7 +55,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
         GoogleApiClient.ConnectionCallbacks,GoogleMap.OnMapLongClickListener {
 
-
+    ArrayList<Marker> markerCollection = new ArrayList<>();
     public int permissionRequestCounter;
     public GoogleApiClient mGoogleApiClient;
     public Boolean startedlocationupdate;
@@ -199,7 +206,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mMap=googleMap;
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
+
     }
+
     public void enableMyLocation() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -252,6 +261,55 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     }
 
     private void setUpMap() {
+        Response.Listener<String> responseListener=new Response.Listener<String>(){
+
+            @Override
+            public void onResponse(String s) {
+                try {
+                    JSONObject jsonResponse=new JSONObject(s);
+                    boolean success=jsonResponse.getBoolean("success");
+                    if(success){
+                        JSONArray jsonArray = jsonResponse.getJSONArray("data");
+                        JSONObject jsonObject;
+                        for(int i=0;i<jsonArray.length();i++){
+                        jsonObject=jsonArray.getJSONObject(i);
+                        String mac=jsonObject.getString("mac");
+                        String android_id=jsonObject.getString("android_id");
+                        Double latitude=jsonObject.getDouble("latitude");
+                        Double longitude=jsonObject.getDouble("longitude");
+                        if(!isMarkerOnArray(markerCollection,latitude,longitude))
+                        markerCollection.add(mMap.addMarker(new MarkerOptions().position(new LatLng(latitude,longitude))));
+                        }
+
+                    }
+                    else{
+                        AlertDialog.Builder builder=new AlertDialog.Builder(MapsActivity.this);
+                        builder.setMessage("Downloading position failed")
+                                .setNegativeButton("retry",null)
+                                .create()
+                                .show();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        DownloadPosition downloadPosition=new DownloadPosition(responseListener);
+        RequestQueue queue= Volley.newRequestQueue(MapsActivity.this);
+        queue.add(downloadPosition);
+
+
+    }
+    private boolean isMarkerOnArray(ArrayList<Marker> array,Double Latitude,Double Longitude)
+    {
+        Marker current;
+        for(int c=0;c<array.size();c++)
+        {
+            current  = array.get(c);
+            if((current.getPosition().latitude == Latitude) &&(current.getPosition().longitude == Longitude) )
+                return true;
+        }
+        return false;
     }
     private void buildAlertMessageNoGps() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -325,7 +383,33 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     @Override
     public void onMapLongClick(LatLng latLng) {
+
         mMap.addMarker(new MarkerOptions().position(latLng).title(latLng.toString()));
+        String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+        Positions position=new Positions(latLng.latitude,latLng.longitude,getWifiMacAddress(),deviceId);
+        Response.Listener<String> responseListener= new Response.Listener<String>() {
+            @Override
+            public void onResponse(String s) {
+                try {
+                    JSONObject jsonResponse= new JSONObject(s);
+                    boolean success=jsonResponse.getBoolean("success");
+                    if(!success){
+                        AlertDialog.Builder builder=new AlertDialog.Builder(MapsActivity.this);
+                        builder.setMessage("uploading position failed")
+                        .setNegativeButton("retry",null)
+                        .create()
+                        .show();
+                         }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        };
+        UploadPosition upload=new UploadPosition(position,responseListener);
+        RequestQueue queue= Volley.newRequestQueue(MapsActivity.this);
+        queue.add(upload);
+
     }
 
     class AddressResultReceiver extends ResultReceiver {
