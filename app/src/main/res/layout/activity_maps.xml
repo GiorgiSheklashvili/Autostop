@@ -11,6 +11,14 @@
         android:text=""
         android:layout_centerHorizontal="true"
         android:textSize="22sp"/>
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/check_in"
+        android:layout_marginTop="@dimen/layout_marginTop_button"
+        android:layout_gravity="right"
+        />
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"

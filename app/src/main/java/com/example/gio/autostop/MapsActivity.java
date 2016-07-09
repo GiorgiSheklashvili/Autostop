@@ -18,11 +18,14 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.ResultReceiver;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,7 +45,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Array;
 import java.net.NetworkInterface;
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -53,14 +55,15 @@ import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
-        GoogleApiClient.ConnectionCallbacks,GoogleMap.OnMapLongClickListener {
+        GoogleApiClient.ConnectionCallbacks {
 
     ArrayList<Marker> markerCollection = new ArrayList<>();
     public int permissionRequestCounter;
     public GoogleApiClient mGoogleApiClient;
-    public Boolean startedlocationupdate;
+    public Boolean startedLocationUpdate;
     public LocationRequest locationRequest;
     public Location mCurrentLocation;
+    public LocationManager mLocationManager;
     public final static int MILISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
     public final static int MINUTE = 60 * MILISECONDS_PER_SECOND;
@@ -75,17 +78,19 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     protected TextView mLocationAddressTextView;
     private AddressResultReceiver mResultReceiver;
     private GoogleMap mMap;// Might be null if Google Play services APK is not available.
-    ProgressBar mProgressBar;
+    private ProgressBar mProgressBar;
+    private Button checkInButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
+        checkInButton = (Button) findViewById(R.id.button2);
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        startedlocationupdate = false;
+        startedLocationUpdate = false;
         permissionRequestCounter = 0;
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -104,11 +109,16 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
         mAddressRequested = false;
         mAddressOutput = "";
-        mLocationAddressTextView=(TextView) findViewById(R.id.address);
+        mLocationAddressTextView = (TextView) findViewById(R.id.address);
         updateUIWidgets();
-        mMap.setOnMapLongClickListener(this);
         deviceUniqueNumber();
         updateValuesFromBundle(savedInstanceState);
+        checkInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                checkInCurrentPosition();
+            }
+        });
     }
 
     @Override
@@ -126,14 +136,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
-        if (mGoogleApiClient.isConnected() && !startedlocationupdate)
+        if (mGoogleApiClient.isConnected() && !startedLocationUpdate)
             startLocationUpdates();
     }
 
 
     @Override
     public void onConnected(Bundle bundle) {
-        if(!startedlocationupdate)
+        if (!startedLocationUpdate)
             startLocationUpdates();
         if (mCurrentLocation != null) {
 
@@ -171,26 +181,27 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             }
         }
     }
-    protected void stopLocationUpdates(){
+
+    protected void stopLocationUpdates() {
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        startedlocationupdate=false;
+        startedLocationUpdate = false;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (mGoogleApiClient.isConnected() && startedlocationupdate)
+        if (mGoogleApiClient.isConnected() && startedLocationUpdate)
             stopLocationUpdates();
 
     }
 
 
-    private void startLocationUpdates(){
+    private void startLocationUpdates() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
                 LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, MapsActivity.this);
-                startedlocationupdate=true;
+                startedLocationUpdate = true;
             } else {
                 if (permissionRequestCounter == 0) {
                     requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
@@ -203,7 +214,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        mMap=googleMap;
+        mMap = googleMap;
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
 
@@ -213,7 +224,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
-                    // Permission to access the location is missing.
+                // Permission to access the location is missing.
                 if (permissionRequestCounter == 0) {
                     requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
                     permissionRequestCounter++;
@@ -225,12 +236,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
         }
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 
         switch (requestCode) {
             case REQUEST_FINE_LOCATION: {
-                if (grantResults.length==1
+                if (grantResults.length == 1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     enableMyLocation();
                     checkGps();
@@ -242,50 +254,52 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         }
 
     }
+
     @Override
     public boolean onMyLocationButtonClick() {
         checkGps();
         return false;
     }
-    public void checkGps(){
-        final LocationManager manager=(LocationManager) getSystemService( Context.LOCATION_SERVICE );
-        if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+
+    public void checkGps() {
+        final LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             buildAlertMessageNoGps();
         }
     }
+
     @Override
     public void onLocationChanged(Location location) {
-        mCurrentLocation=location;
-        mLastUpdateTime= DateFormat.getTimeInstance().format(new Date());
+        mCurrentLocation = location;
+        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
         fetchAddressHandler();
     }
 
     private void setUpMap() {
-        Response.Listener<String> responseListener=new Response.Listener<String>(){
+        Response.Listener<String> responseListener = new Response.Listener<String>() {
 
             @Override
             public void onResponse(String s) {
                 try {
-                    JSONObject jsonResponse=new JSONObject(s);
-                    boolean success=jsonResponse.getBoolean("success");
-                    if(success){
+                    JSONObject jsonResponse = new JSONObject(s);
+                    boolean success = jsonResponse.getBoolean("success");
+                    if (success) {
                         JSONArray jsonArray = jsonResponse.getJSONArray("data");
                         JSONObject jsonObject;
-                        for(int i=0;i<jsonArray.length();i++){
-                        jsonObject=jsonArray.getJSONObject(i);
-                        String mac=jsonObject.getString("mac");
-                        String android_id=jsonObject.getString("android_id");
-                        Double latitude=jsonObject.getDouble("latitude");
-                        Double longitude=jsonObject.getDouble("longitude");
-                        if(!isMarkerOnArray(markerCollection,latitude,longitude))
-                        markerCollection.add(mMap.addMarker(new MarkerOptions().position(new LatLng(latitude,longitude))));
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            jsonObject = jsonArray.getJSONObject(i);
+                            String mac = jsonObject.getString("mac");
+                            String android_id = jsonObject.getString("android_id");
+                            Double latitude = jsonObject.getDouble("latitude");
+                            Double longitude = jsonObject.getDouble("longitude");
+                            if (!isMarkerOnArray(markerCollection, latitude, longitude))
+                                markerCollection.add(mMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude))));
                         }
 
-                    }
-                    else{
-                        AlertDialog.Builder builder=new AlertDialog.Builder(MapsActivity.this);
+                    } else {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                         builder.setMessage("Downloading position failed")
-                                .setNegativeButton("retry",null)
+                                .setNegativeButton("retry", null)
                                 .create()
                                 .show();
                     }
@@ -294,23 +308,23 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 }
             }
         };
-        DownloadPosition downloadPosition=new DownloadPosition(responseListener);
-        RequestQueue queue= Volley.newRequestQueue(MapsActivity.this);
+        DownloadPosition downloadPosition = new DownloadPosition(responseListener);
+        RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
         queue.add(downloadPosition);
 
 
     }
-    private boolean isMarkerOnArray(ArrayList<Marker> array,Double Latitude,Double Longitude)
-    {
+
+    private boolean isMarkerOnArray(ArrayList<Marker> array, Double Latitude, Double Longitude) {
         Marker current;
-        for(int c=0;c<array.size();c++)
-        {
-            current  = array.get(c);
-            if((current.getPosition().latitude == Latitude) &&(current.getPosition().longitude == Longitude) )
+        for (int c = 0; c < array.size(); c++) {
+            current = array.get(c);
+            if ((current.getPosition().latitude == Latitude) && (current.getPosition().longitude == Longitude))
                 return true;
         }
         return false;
     }
+
     private void buildAlertMessageNoGps() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
@@ -331,7 +345,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY, startedlocationupdate);
+        savedInstanceState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY, startedLocationUpdate);
         savedInstanceState.putParcelable(LOCATION_KEY, mCurrentLocation);
         savedInstanceState.putBoolean(ADDRESS_REQUESTED_KEY, mAddressRequested);
         savedInstanceState.putString(LOCATION_ADDRESS_KEY, mAddressOutput);
@@ -341,7 +355,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     private void updateValuesFromBundle(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
             if (savedInstanceState.keySet().contains(REQUESTING_LOCATION_UPDATES_KEY))
-                startedlocationupdate = savedInstanceState.getBoolean(REQUESTING_LOCATION_UPDATES_KEY);
+                startedLocationUpdate = savedInstanceState.getBoolean(REQUESTING_LOCATION_UPDATES_KEY);
             if (savedInstanceState.keySet().contains(LOCATION_KEY))
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
             if (savedInstanceState.keySet().contains(ADDRESS_REQUESTED_KEY)) {
@@ -350,11 +364,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             if (savedInstanceState.keySet().contains(LOCATION_ADDRESS_KEY)) {
                 mAddressOutput = savedInstanceState.getString(LOCATION_ADDRESS_KEY);
                 displayAddressOutput();
+            }
+
         }
 
     }
 
-        }
     private void updateUIWidgets() {
         if (mAddressRequested) {
             mProgressBar.setVisibility(ProgressBar.VISIBLE);
@@ -363,7 +378,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         }
     }
 
-    public void fetchAddressHandler(){
+    public void fetchAddressHandler() {
         if (mGoogleApiClient.isConnected() && mCurrentLocation != null) {
             startIntentService();
         }
@@ -377,16 +392,40 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         intent.putExtra(Constants.LOCATION_DATA_EXTRA, mCurrentLocation);
         startService(intent);
     }
+
     protected void displayAddressOutput() {
         mLocationAddressTextView.setText(mAddressOutput);
     }
 
-    @Override
-    public void onMapLongClick(LatLng latLng) {
+    public void checkInCurrentPosition() {
 
-        mMap.addMarker(new MarkerOptions().position(latLng).title(latLng.toString()));
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        mLocationManager = (LocationManager)  this.getSystemService(Context.LOCATION_SERVICE);
+        Location locationGPS = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        Location locationNet = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Location location;
+        long GPSLocationTime = 0;
+        if (null != locationGPS) { GPSLocationTime = locationGPS.getTime(); }
+
+        long NetLocationTime = 0;
+
+        if (null != locationNet) {
+            NetLocationTime = locationNet.getTime();
+        }
+
+        if ( 0 < GPSLocationTime - NetLocationTime ) {
+            location=locationGPS;
+        }
+        else {
+            location=locationNet;
+        }
+        LatLng newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+        mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
         String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-        Positions position=new Positions(latLng.latitude,latLng.longitude,getWifiMacAddress(),deviceId);
+        Positions position=new Positions(newLatLng.latitude,newLatLng.longitude,getWifiMacAddress(),deviceId);
+
         Response.Listener<String> responseListener= new Response.Listener<String>() {
             @Override
             public void onResponse(String s) {
@@ -459,4 +498,5 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         }
         return "";
     }
+
 }
