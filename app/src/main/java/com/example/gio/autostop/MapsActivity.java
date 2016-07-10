@@ -57,7 +57,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
         GoogleApiClient.ConnectionCallbacks {
 
-    ArrayList<Marker> markerCollection = new ArrayList<>();
+
     public int permissionRequestCounter;
     public GoogleApiClient mGoogleApiClient;
     public Boolean startedLocationUpdate;
@@ -79,14 +79,18 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     private AddressResultReceiver mResultReceiver;
     private GoogleMap mMap;// Might be null if Google Play services APK is not available.
     private ProgressBar mProgressBar;
-    private Button checkInButton;
+    private Button checkInButton,checkOutButton;
+    private ArrayList<Marker> markerCollection = new ArrayList<>();
+    private Marker  markerForDeletion;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
         setUpMapIfNeeded();
         checkInButton = (Button) findViewById(R.id.button2);
+        checkOutButton=(Button)findViewById(R.id.button3);
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -113,12 +117,25 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         updateUIWidgets();
         deviceUniqueNumber();
         updateValuesFromBundle(savedInstanceState);
+
         checkInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 checkInCurrentPosition();
+                checkInButton.setClickable(false);
+                checkOutButton.setClickable(true);
             }
         });
+        checkOutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                deletePosition();
+                markerForDeletion.remove();
+                checkOutButton.setClickable(false);
+                checkInButton.setClickable(true);
+            }
+        });
+        checkOutButton.setClickable(false);
     }
 
     @Override
@@ -398,7 +415,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     }
 
     public void checkInCurrentPosition() {
-
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
@@ -422,10 +438,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             location=locationNet;
         }
         LatLng newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-        mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
+        markerForDeletion=mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
         String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
         Positions position=new Positions(newLatLng.latitude,newLatLng.longitude,getWifiMacAddress(),deviceId);
-
         Response.Listener<String> responseListener= new Response.Listener<String>() {
             @Override
             public void onResponse(String s) {
@@ -450,7 +465,31 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         queue.add(upload);
 
     }
-
+    public void deletePosition(){
+        String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+        String mac=getWifiMacAddress();
+        Response.Listener<String> responseListener = new Response.Listener<String>(){
+            @Override
+            public void onResponse(String s) {
+                try {
+                    JSONObject jsonResponse= new JSONObject(s);
+                    boolean success=jsonResponse.getBoolean("success");
+                    if(!success){
+                        AlertDialog.Builder builder=new AlertDialog.Builder(MapsActivity.this);
+                        builder.setMessage("uploading position failed")
+                                .setNegativeButton("retry",null)
+                                .create()
+                                .show();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        DeletePosition delete=new DeletePosition(mac,deviceId,responseListener);
+        RequestQueue queue=Volley.newRequestQueue(MapsActivity.this);
+        queue.add(delete);
+    }
     class AddressResultReceiver extends ResultReceiver {
         private int CREATOR;
         public AddressResultReceiver(Handler handler) {
