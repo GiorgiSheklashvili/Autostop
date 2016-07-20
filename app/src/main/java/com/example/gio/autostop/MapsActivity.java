@@ -15,19 +15,16 @@ import com.google.android.gms.location.LocationListener;
 
 import android.location.LocationManager;
 import android.os.Build;
-import android.os.Handler;
-import android.os.ResultReceiver;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -73,12 +70,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     protected static final String ADDRESS_REQUESTED_KEY = "address-request-pending";
     protected static final String LOCATION_ADDRESS_KEY = "location-address";
     protected static final String TAG = "main-activity";
-    protected boolean mAddressRequested;
-    protected String mAddressOutput;
-    protected TextView mLocationAddressTextView;
-    private AddressResultReceiver mResultReceiver;
+    public address_fragment address_fragment;
+
+
     private GoogleMap mMap;// Might be null if Google Play services APK is not available.
-    private ProgressBar mProgressBar;
+
     private Button checkInButton,checkOutButton;
     private ArrayList<Marker> markerCollection = new ArrayList<>();
     private Marker  markerForDeletion;
@@ -87,13 +83,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-
         setUpMapIfNeeded();
         checkInButton = (Button) findViewById(R.id.button2);
         checkOutButton=(Button)findViewById(R.id.button3);
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        address_fragment address_fragment=(address_fragment)getSupportFragmentManager().findFragmentById(R.id.address_fragment);
+        address_fragment.setMapsActivity(this);
         startedLocationUpdate = false;
         permissionRequestCounter = 0;
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -109,15 +106,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 == PackageManager.PERMISSION_GRANTED) {
             checkGps();
         }
-        mResultReceiver = new AddressResultReceiver(new Handler());
-        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
-        mAddressRequested = false;
-        mAddressOutput = "";
-        mLocationAddressTextView = (TextView) findViewById(R.id.address);
-        updateUIWidgets();
+
         deviceUniqueNumber();
         updateValuesFromBundle(savedInstanceState);
-
         checkInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -168,9 +159,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 Toast.makeText(this, R.string.no_geocoder_available, Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            if (mAddressRequested) {
-                startIntentService();
+            address_fragment gettingAddressFragment=(address_fragment)getSupportFragmentManager().findFragmentById(R.id.map);
+            if (gettingAddressFragment.mAddressRequested) {
+              gettingAddressFragment.startIntentService();
             }
         }
     }
@@ -289,7 +280,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-        fetchAddressHandler();
+        address_fragment.fetchAddressHandler();
     }
 
     private void setUpMap() {
@@ -364,8 +355,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY, startedLocationUpdate);
         savedInstanceState.putParcelable(LOCATION_KEY, mCurrentLocation);
-        savedInstanceState.putBoolean(ADDRESS_REQUESTED_KEY, mAddressRequested);
-        savedInstanceState.putString(LOCATION_ADDRESS_KEY, mAddressOutput);
+        savedInstanceState.putBoolean(ADDRESS_REQUESTED_KEY, address_fragment.mAddressRequested);
+        savedInstanceState.putString(LOCATION_ADDRESS_KEY, address_fragment.mAddressOutput);
         super.onSaveInstanceState(savedInstanceState);
     }
 
@@ -376,43 +367,21 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             if (savedInstanceState.keySet().contains(LOCATION_KEY))
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
             if (savedInstanceState.keySet().contains(ADDRESS_REQUESTED_KEY)) {
-                mAddressRequested = savedInstanceState.getBoolean(ADDRESS_REQUESTED_KEY);
+                address_fragment.mAddressRequested = savedInstanceState.getBoolean(ADDRESS_REQUESTED_KEY);
             }
             if (savedInstanceState.keySet().contains(LOCATION_ADDRESS_KEY)) {
-                mAddressOutput = savedInstanceState.getString(LOCATION_ADDRESS_KEY);
-                displayAddressOutput();
+                address_fragment.mAddressOutput = savedInstanceState.getString(LOCATION_ADDRESS_KEY);
+                address_fragment.displayAddressOutput();
             }
 
         }
 
     }
 
-    private void updateUIWidgets() {
-        if (mAddressRequested) {
-            mProgressBar.setVisibility(ProgressBar.VISIBLE);
-        } else {
-            mProgressBar.setVisibility(ProgressBar.GONE);
-        }
-    }
 
-    public void fetchAddressHandler() {
-        if (mGoogleApiClient.isConnected() && mCurrentLocation != null) {
-            startIntentService();
-        }
-        mAddressRequested = true;
-        updateUIWidgets();
-    }
 
-    private void startIntentService() {
-        Intent intent = new Intent(this, FetchAddressIntentService.class);
-        intent.putExtra(Constants.RECEIVER, mResultReceiver);
-        intent.putExtra(Constants.LOCATION_DATA_EXTRA, mCurrentLocation);
-        startService(intent);
-    }
 
-    protected void displayAddressOutput() {
-        mLocationAddressTextView.setText(mAddressOutput);
-    }
+
 
     public void checkInCurrentPosition() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -490,21 +459,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         RequestQueue queue=Volley.newRequestQueue(MapsActivity.this);
         queue.add(delete);
     }
-    class AddressResultReceiver extends ResultReceiver {
-        private int CREATOR;
-        public AddressResultReceiver(Handler handler) {
-            super(handler);
-        }
 
-        @Override
-        protected void onReceiveResult(int resultCode, Bundle resultData) {
-            mAddressOutput = resultData.getString(Constants.RESULT_DATA_KEY);
-            displayAddressOutput();
-            mAddressRequested = false;
-            updateUIWidgets();
-            super.onReceiveResult(resultCode, resultData);
-        }
-    }
+
     public void deviceUniqueNumber(){
         String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
 
