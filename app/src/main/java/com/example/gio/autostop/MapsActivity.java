@@ -1,6 +1,7 @@
 package com.example.gio.autostop;
 
 import android.Manifest;
+import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -17,9 +18,9 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -70,7 +71,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     protected static final String ADDRESS_REQUESTED_KEY = "address-request-pending";
     protected static final String LOCATION_ADDRESS_KEY = "location-address";
     protected static final String TAG = "main-activity";
-    public address_fragment address_fragment;
+    public AddressFragment AddressFragment;
 
 
     private GoogleMap mMap;// Might be null if Google Play services APK is not available.
@@ -89,8 +90,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        address_fragment address_fragment=(address_fragment)getSupportFragmentManager().findFragmentById(R.id.address_fragment);
-        address_fragment.setMapsActivity(this);
+        if(savedInstanceState==null){
+            AddressFragment addressFragment1=new AddressFragment();
+            addressFragment1.setArguments(getIntent().getExtras());
+            getSupportFragmentManager().beginTransaction().add(R.id.fragment_container,addressFragment1).commit();
+        }
+        AddressFragment =(AddressFragment)getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
+        AddressFragment.setMapsActivity(this);
         startedLocationUpdate = false;
         permissionRequestCounter = 0;
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -159,9 +165,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 Toast.makeText(this, R.string.no_geocoder_available, Toast.LENGTH_SHORT).show();
                 return;
             }
-            address_fragment gettingAddressFragment=(address_fragment)getSupportFragmentManager().findFragmentById(R.id.map);
-            if (gettingAddressFragment.mAddressRequested) {
-              gettingAddressFragment.startIntentService();
+//            AddressFragment gettingAddressFragment=(AddressFragment)getSupportFragmentManager().findFragmentById(R.id.map);
+            if (AddressFragment.mAddressRequested) {
+                AddressFragment.startIntentService();
             }
         }
     }
@@ -181,8 +187,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
             // Try to obtain the map from the SupportMapFragment.
-            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
-                    .getMap();
+            SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            mapFrag.getMapAsync(this);
+//            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
+//                    .getMapAsync(this);
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 setUpMap();
@@ -247,20 +255,17 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-
         switch (requestCode) {
             case REQUEST_FINE_LOCATION: {
                 if (grantResults.length == 1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     enableMyLocation();
                     checkGps();
-
                 } else {
                     Toast.makeText(MapsActivity.this, "Permission was blocked", Toast.LENGTH_SHORT).show();
                 }
             }
         }
-
     }
 
     @Override
@@ -280,7 +285,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-        address_fragment.fetchAddressHandler();
+        AddressFragment.fetchAddressHandler();
     }
 
     private void setUpMap() {
@@ -355,8 +360,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY, startedLocationUpdate);
         savedInstanceState.putParcelable(LOCATION_KEY, mCurrentLocation);
-        savedInstanceState.putBoolean(ADDRESS_REQUESTED_KEY, address_fragment.mAddressRequested);
-        savedInstanceState.putString(LOCATION_ADDRESS_KEY, address_fragment.mAddressOutput);
+        savedInstanceState.putBoolean(ADDRESS_REQUESTED_KEY, AddressFragment.mAddressRequested);
+        savedInstanceState.putString(LOCATION_ADDRESS_KEY, AddressFragment.mAddressOutput);
         super.onSaveInstanceState(savedInstanceState);
     }
 
@@ -367,11 +372,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             if (savedInstanceState.keySet().contains(LOCATION_KEY))
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
             if (savedInstanceState.keySet().contains(ADDRESS_REQUESTED_KEY)) {
-                address_fragment.mAddressRequested = savedInstanceState.getBoolean(ADDRESS_REQUESTED_KEY);
+                AddressFragment.mAddressRequested = savedInstanceState.getBoolean(ADDRESS_REQUESTED_KEY);
             }
             if (savedInstanceState.keySet().contains(LOCATION_ADDRESS_KEY)) {
-                address_fragment.mAddressOutput = savedInstanceState.getString(LOCATION_ADDRESS_KEY);
-                address_fragment.displayAddressOutput();
+                AddressFragment.mAddressOutput = savedInstanceState.getString(LOCATION_ADDRESS_KEY);
+                AddressFragment.displayAddressOutput();
             }
 
         }

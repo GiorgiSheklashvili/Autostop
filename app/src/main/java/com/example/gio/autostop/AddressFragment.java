@@ -12,14 +12,14 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
-public class address_fragment extends Fragment {
+public class AddressFragment extends Fragment {
     protected TextView mLocationAddressTextView;
     protected String mAddressOutput;
     private AddressResultReceiver mResultReceiver;
     private ProgressBar mProgressBar;
     protected boolean mAddressRequested;
     private  MapsActivity mapsActivity;
-    public address_fragment() {
+    public AddressFragment() {
         // Required empty public constructor
     }
 
@@ -61,14 +61,14 @@ public class address_fragment extends Fragment {
         super.onStart();
         View view = getView();
         if(view!=null){
-            mProgressBar = (ProgressBar) view.findViewById(R.id.progress_bar);
+            mProgressBar = (ProgressBar) getActivity().findViewById(R.id.progress_bar);
             mLocationAddressTextView=(TextView) view.findViewById(R.id.address);
             displayAddressOutput();
         }
     }
     public void displayAddressOutput(){
     mLocationAddressTextView.setText(mAddressOutput);
-}
+    }
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,9 +97,9 @@ public class address_fragment extends Fragment {
     private void updateUIWidgets() {
 
         if (mAddressRequested) {
-            mProgressBar.setVisibility(ProgressBar.VISIBLE);
+//            mProgressBar.setVisibility(ProgressBar.VISIBLE);
         } else {
-            mProgressBar.setVisibility(ProgressBar.GONE);
+//            mProgressBar.setVisibility(ProgressBar.GONE);
         }
     }
 }

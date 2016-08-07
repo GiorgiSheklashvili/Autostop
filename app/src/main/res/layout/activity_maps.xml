@@ -4,8 +4,11 @@
     android:layout_width="match_parent"
     android:orientation="horizontal">
 
-<fragment class="com.example.gio.autostop.address_fragment"
-    android:id="@+id/address_fragment"
+<fragment class="com.example.gio.autostop.AddressFragment"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:name="com.google.android.gms.maps.SupportMapFragment"
+    android:id="@+id/AddressFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     />
@@ -16,5 +19,6 @@
    class="com.google.android.gms.maps.SupportMapFragment"
     >
     <include layout="@layout/map_interface"/>
+    <include layout="@layout/fragment_address_fragment"/>
     </fragment>
 </LinearLayout>
