@@ -1,7 +1,7 @@
 package com.example.gio.autostop;
 
 import android.Manifest;
-import android.app.FragmentTransaction;
+import android.support.v4.app.FragmentTransaction;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -68,17 +68,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     protected String mLastUpdateTime;
     protected final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     protected final static String LOCATION_KEY = "location-key";
-    protected static final String ADDRESS_REQUESTED_KEY = "address-request-pending";
-    protected static final String LOCATION_ADDRESS_KEY = "location-address";
     protected static final String TAG = "main-activity";
     public AddressFragment AddressFragment;
 
-
     private GoogleMap mMap;// Might be null if Google Play services APK is not available.
-
-    private Button checkInButton,checkOutButton;
+    private Button checkInButton, checkOutButton;
     private ArrayList<Marker> markerCollection = new ArrayList<>();
-    private Marker  markerForDeletion;
+    private Marker markerForDeletion;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,16 +82,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
         checkInButton = (Button) findViewById(R.id.button2);
-        checkOutButton=(Button)findViewById(R.id.button3);
-        SupportMapFragment mapFragment =
-                (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-        if(savedInstanceState==null){
-            AddressFragment addressFragment1=new AddressFragment();
+        checkOutButton = (Button) findViewById(R.id.button3);
+        if (savedInstanceState == null) {
+            AddressFragment addressFragment1 = new AddressFragment();
             addressFragment1.setArguments(getIntent().getExtras());
-            getSupportFragmentManager().beginTransaction().add(R.id.fragment_container,addressFragment1).commit();
+            getSupportFragmentManager().beginTransaction().add(R.id.fragment_container, addressFragment1).commit();
         }
-        AddressFragment =(AddressFragment)getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
+        AddressFragment = (AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
         AddressFragment.setMapsActivity(this);
         startedLocationUpdate = false;
         permissionRequestCounter = 0;
@@ -149,7 +142,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     @Override
     protected void onResume() {
         super.onResume();
-        setUpMapIfNeeded();
+        ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMapAsync(this);
         if (mGoogleApiClient.isConnected() && !startedLocationUpdate)
             startLocationUpdates();
     }
@@ -180,18 +173,16 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     @Override
     protected void onStop() {
         super.onStop();
+        if (mGoogleApiClient.isConnected())
         mGoogleApiClient.disconnect();
     }
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
-            // Try to obtain the map from the SupportMapFragment.
-            SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-            mapFrag.getMapAsync(this);
-//            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
-//                    .getMapAsync(this);
-            // Check if we were successful in obtaining the map.
+
+            ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
+                    .getMapAsync(this);
             if (mMap != null) {
                 setUpMap();
             }
@@ -206,8 +197,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     @Override
     protected void onPause() {
         super.onPause();
-        if (mGoogleApiClient.isConnected() && startedLocationUpdate)
-            stopLocationUpdates();
+//        if (mGoogleApiClient.isConnected() && startedLocationUpdate)
+//            stopLocationUpdates();
 
     }
 
@@ -233,7 +224,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mMap = googleMap;
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
-
+        setUpMap();
     }
 
     public void enableMyLocation() {
@@ -360,8 +351,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY, startedLocationUpdate);
         savedInstanceState.putParcelable(LOCATION_KEY, mCurrentLocation);
-        savedInstanceState.putBoolean(ADDRESS_REQUESTED_KEY, AddressFragment.mAddressRequested);
-        savedInstanceState.putString(LOCATION_ADDRESS_KEY, AddressFragment.mAddressOutput);
+
         super.onSaveInstanceState(savedInstanceState);
     }
 
@@ -371,33 +361,25 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 startedLocationUpdate = savedInstanceState.getBoolean(REQUESTING_LOCATION_UPDATES_KEY);
             if (savedInstanceState.keySet().contains(LOCATION_KEY))
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
-            if (savedInstanceState.keySet().contains(ADDRESS_REQUESTED_KEY)) {
-                AddressFragment.mAddressRequested = savedInstanceState.getBoolean(ADDRESS_REQUESTED_KEY);
-            }
-            if (savedInstanceState.keySet().contains(LOCATION_ADDRESS_KEY)) {
-                AddressFragment.mAddressOutput = savedInstanceState.getString(LOCATION_ADDRESS_KEY);
-                AddressFragment.displayAddressOutput();
-            }
+
 
         }
 
     }
 
 
-
-
-
-
     public void checkInCurrentPosition() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        mLocationManager = (LocationManager)  this.getSystemService(Context.LOCATION_SERVICE);
+        mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         Location locationGPS = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         Location locationNet = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         Location location;
         long GPSLocationTime = 0;
-        if (null != locationGPS) { GPSLocationTime = locationGPS.getTime(); }
+        if (null != locationGPS) {
+            GPSLocationTime = locationGPS.getTime();
+        }
 
         long NetLocationTime = 0;
 
@@ -405,53 +387,53 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             NetLocationTime = locationNet.getTime();
         }
 
-        if ( 0 < GPSLocationTime - NetLocationTime ) {
-            location=locationGPS;
-        }
-        else {
-            location=locationNet;
+        if (0 < GPSLocationTime - NetLocationTime) {
+            location = locationGPS;
+        } else {
+            location = locationNet;
         }
         LatLng newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-        markerForDeletion=mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
+        markerForDeletion = mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
         String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-        Positions position=new Positions(newLatLng.latitude,newLatLng.longitude,getWifiMacAddress(),deviceId);
-        Response.Listener<String> responseListener= new Response.Listener<String>() {
+        Positions position = new Positions(newLatLng.latitude, newLatLng.longitude, getWifiMacAddress(), deviceId);
+        Response.Listener<String> responseListener = new Response.Listener<String>() {
             @Override
             public void onResponse(String s) {
                 try {
-                    JSONObject jsonResponse= new JSONObject(s);
-                    boolean success=jsonResponse.getBoolean("success");
-                    if(!success){
-                        AlertDialog.Builder builder=new AlertDialog.Builder(MapsActivity.this);
+                    JSONObject jsonResponse = new JSONObject(s);
+                    boolean success = jsonResponse.getBoolean("success");
+                    if (!success) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                         builder.setMessage("uploading position failed")
-                        .setNegativeButton("retry",null)
-                        .create()
-                        .show();
-                         }
+                                .setNegativeButton("retry", null)
+                                .create()
+                                .show();
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
             }
         };
-        UploadPosition upload=new UploadPosition(position,responseListener);
-        RequestQueue queue= Volley.newRequestQueue(MapsActivity.this);
+        UploadPosition upload = new UploadPosition(position, responseListener);
+        RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
         queue.add(upload);
 
     }
-    public void deletePosition(){
+
+    public void deletePosition() {
         String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-        String mac=getWifiMacAddress();
-        Response.Listener<String> responseListener = new Response.Listener<String>(){
+        String mac = getWifiMacAddress();
+        Response.Listener<String> responseListener = new Response.Listener<String>() {
             @Override
             public void onResponse(String s) {
                 try {
-                    JSONObject jsonResponse= new JSONObject(s);
-                    boolean success=jsonResponse.getBoolean("success");
-                    if(!success){
-                        AlertDialog.Builder builder=new AlertDialog.Builder(MapsActivity.this);
+                    JSONObject jsonResponse = new JSONObject(s);
+                    boolean success = jsonResponse.getBoolean("success");
+                    if (!success) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                         builder.setMessage("uploading position failed")
-                                .setNegativeButton("retry",null)
+                                .setNegativeButton("retry", null)
                                 .create()
                                 .show();
                     }
@@ -460,27 +442,28 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 }
             }
         };
-        DeletePosition delete=new DeletePosition(mac,deviceId,responseListener);
-        RequestQueue queue=Volley.newRequestQueue(MapsActivity.this);
+        DeletePosition delete = new DeletePosition(mac, deviceId, responseListener);
+        RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
         queue.add(delete);
     }
 
 
-    public void deviceUniqueNumber(){
+    public void deviceUniqueNumber() {
         String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        Toast.makeText(this,deviceId+" "+getWifiMacAddress(),Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, deviceId + " " + getWifiMacAddress(), Toast.LENGTH_SHORT).show();
     }
-        public static String getWifiMacAddress() {
+
+    public static String getWifiMacAddress() {
         try {
             String interfaceName = "wlan0";
             List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
             for (NetworkInterface intf : interfaces) {
-                if (!intf.getName().equalsIgnoreCase(interfaceName)){
+                if (!intf.getName().equalsIgnoreCase(interfaceName)) {
                     continue;
                 }
                 byte[] mac = intf.getHardwareAddress();
-                if (mac==null){
+                if (mac == null) {
                     return "";
                 }
 
@@ -488,13 +471,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 for (byte aMac : mac) {
                     buf.append(String.format("%02X:", aMac));
                 }
-                if (buf.length()>0) {
+                if (buf.length() > 0) {
                     buf.deleteCharAt(buf.length() - 1);
                 }
                 return buf.toString();
             }
         } catch (Exception ex) {
-            Log.i("getWifiMacAddress","exception in getWifiMacAddress");
+            Log.i("getWifiMacAddress", "exception in getWifiMacAddress");
         }
         return "";
     }
