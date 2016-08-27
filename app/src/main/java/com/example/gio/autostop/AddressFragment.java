@@ -12,9 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.util.zip.Inflater;
 
 
 public class AddressFragment extends Fragment {
@@ -39,16 +37,10 @@ public class AddressFragment extends Fragment {
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData) {
             super.onReceiveResult(resultCode, resultData);
-            // Show a toast message if an address was found.
-//            if (resultCode == Constants.SUCCESS_RESULT) {
-//                Toast.makeText(getActivity(),getString(R.string.address_found),Toast.LENGTH_SHORT).show();
-//            }
             mAddressOutput = resultData.getString(Constants.RESULT_DATA_KEY);
             displayAddressOutput();
-//            Toast.makeText(getActivity(),mAddressOutput,Toast.LENGTH_SHORT).show();
             mAddressRequested = false;
             updateUIWidgets();
-
         }
     }
     @Override
@@ -65,7 +57,6 @@ public class AddressFragment extends Fragment {
     }
     public void setMapsActivity(MapsActivity mapsActivity){
         this.mapsActivity=mapsActivity;
-
     }
 
     @Override

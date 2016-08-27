@@ -1,7 +1,6 @@
 package com.example.gio.autostop;
 
 import android.Manifest;
-import android.support.v4.app.FragmentTransaction;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -9,23 +8,16 @@ import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.location.Location;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.LocationListener;
 
 import android.location.LocationManager;
 import android.os.Build;
 import android.provider.Settings;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -35,17 +27,10 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.net.NetworkInterface;
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -61,7 +46,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public Boolean startedLocationUpdate;
     public LocationRequest locationRequest;
     public Location mCurrentLocation;
-    public LocationManager mLocationManager;
     public final static int MILISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
     public final static int MINUTE = 60 * MILISECONDS_PER_SECOND;
@@ -70,26 +54,26 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     protected final static String LOCATION_KEY = "location-key";
     protected static final String TAG = "main-activity";
     public AddressFragment AddressFragment;
+    public MapFunctions mapFunctions;
+    public GoogleMap mMap;// Might be null if Google Play services APK is not available.
 
-    private GoogleMap mMap;// Might be null if Google Play services APK is not available.
-    private Button checkInButton, checkOutButton;
-    private ArrayList<Marker> markerCollection = new ArrayList<>();
-    private Marker markerForDeletion;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
-        checkInButton = (Button) findViewById(R.id.button2);
-        checkOutButton = (Button) findViewById(R.id.button3);
-        if (savedInstanceState == null) {
-            AddressFragment addressFragment1 = new AddressFragment();
-            addressFragment1.setArguments(getIntent().getExtras());
-            getSupportFragmentManager().beginTransaction().add(R.id.fragment_container, addressFragment1).commit();
-        }
+//        if (savedInstanceState == null) {
+//            AddressFragment addressFragment1 = new AddressFragment();
+//            addressFragment1.setArguments(getIntent().getExtras());
+//            getSupportFragmentManager().beginTransaction().add(R.id.fragment_container, addressFragment1).commit();
+//        }
         AddressFragment = (AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
         AddressFragment.setMapsActivity(this);
+        mapFunctions=(MapFunctions) getSupportFragmentManager().findFragmentById(R.id.MapFunctions);
+        mapFunctions.setMapsActivity(this);
         startedLocationUpdate = false;
         permissionRequestCounter = 0;
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -108,24 +92,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
         deviceUniqueNumber();
         updateValuesFromBundle(savedInstanceState);
-        checkInButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                checkInCurrentPosition();
-                checkInButton.setClickable(false);
-                checkOutButton.setClickable(true);
-            }
-        });
-        checkOutButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                deletePosition();
-                markerForDeletion.remove();
-                checkOutButton.setClickable(false);
-                checkInButton.setClickable(true);
-            }
-        });
-        checkOutButton.setClickable(false);
+
     }
 
     @Override
@@ -158,7 +125,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 Toast.makeText(this, R.string.no_geocoder_available, Toast.LENGTH_SHORT).show();
                 return;
             }
-//            AddressFragment gettingAddressFragment=(AddressFragment)getSupportFragmentManager().findFragmentById(R.id.map);
             if (AddressFragment.mAddressRequested) {
                 AddressFragment.startIntentService();
             }
@@ -184,7 +150,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMapAsync(this);
             if (mMap != null) {
-                setUpMap();
+                mapFunctions.setUpMap();
             }
         }
     }
@@ -197,8 +163,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     @Override
     protected void onPause() {
         super.onPause();
-//        if (mGoogleApiClient.isConnected() && startedLocationUpdate)
-//            stopLocationUpdates();
+        if (mGoogleApiClient.isConnected() && startedLocationUpdate)
+            stopLocationUpdates();
 
     }
 
@@ -224,7 +190,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mMap = googleMap;
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
-        setUpMap();
+        mapFunctions.setUpMap();
     }
 
     public void enableMyLocation() {
@@ -279,55 +245,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         AddressFragment.fetchAddressHandler();
     }
 
-    private void setUpMap() {
-        Response.Listener<String> responseListener = new Response.Listener<String>() {
-
-            @Override
-            public void onResponse(String s) {
-                try {
-                    JSONObject jsonResponse = new JSONObject(s);
-                    boolean success = jsonResponse.getBoolean("success");
-                    if (success) {
-                        JSONArray jsonArray = jsonResponse.getJSONArray("data");
-                        JSONObject jsonObject;
-                        for (int i = 0; i < jsonArray.length(); i++) {
-                            jsonObject = jsonArray.getJSONObject(i);
-                            String mac = jsonObject.getString("mac");
-                            String android_id = jsonObject.getString("android_id");
-                            Double latitude = jsonObject.getDouble("latitude");
-                            Double longitude = jsonObject.getDouble("longitude");
-                            if (!isMarkerOnArray(markerCollection, latitude, longitude))
-                                markerCollection.add(mMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude))));
-                        }
-
-                    } else {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                        builder.setMessage("Downloading position failed")
-                                .setNegativeButton("retry", null)
-                                .create()
-                                .show();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        DownloadPosition downloadPosition = new DownloadPosition(responseListener);
-        RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
-        queue.add(downloadPosition);
 
 
-    }
-
-    private boolean isMarkerOnArray(ArrayList<Marker> array, Double Latitude, Double Longitude) {
-        Marker current;
-        for (int c = 0; c < array.size(); c++) {
-            current = array.get(c);
-            if ((current.getPosition().latitude == Latitude) && (current.getPosition().longitude == Longitude))
-                return true;
-        }
-        return false;
-    }
 
     private void buildAlertMessageNoGps() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -368,84 +287,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     }
 
 
-    public void checkInCurrentPosition() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        Location locationGPS = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        Location locationNet = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        Location location;
-        long GPSLocationTime = 0;
-        if (null != locationGPS) {
-            GPSLocationTime = locationGPS.getTime();
-        }
 
-        long NetLocationTime = 0;
-
-        if (null != locationNet) {
-            NetLocationTime = locationNet.getTime();
-        }
-
-        if (0 < GPSLocationTime - NetLocationTime) {
-            location = locationGPS;
-        } else {
-            location = locationNet;
-        }
-        LatLng newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-        markerForDeletion = mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
-        String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-        Positions position = new Positions(newLatLng.latitude, newLatLng.longitude, getWifiMacAddress(), deviceId);
-        Response.Listener<String> responseListener = new Response.Listener<String>() {
-            @Override
-            public void onResponse(String s) {
-                try {
-                    JSONObject jsonResponse = new JSONObject(s);
-                    boolean success = jsonResponse.getBoolean("success");
-                    if (!success) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                        builder.setMessage("uploading position failed")
-                                .setNegativeButton("retry", null)
-                                .create()
-                                .show();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        };
-        UploadPosition upload = new UploadPosition(position, responseListener);
-        RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
-        queue.add(upload);
-
-    }
-
-    public void deletePosition() {
-        String deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-        String mac = getWifiMacAddress();
-        Response.Listener<String> responseListener = new Response.Listener<String>() {
-            @Override
-            public void onResponse(String s) {
-                try {
-                    JSONObject jsonResponse = new JSONObject(s);
-                    boolean success = jsonResponse.getBoolean("success");
-                    if (!success) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                        builder.setMessage("uploading position failed")
-                                .setNegativeButton("retry", null)
-                                .create()
-                                .show();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        DeletePosition delete = new DeletePosition(mac, deviceId, responseListener);
-        RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
-        queue.add(delete);
-    }
 
 
     public void deviceUniqueNumber() {

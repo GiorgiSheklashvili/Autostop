@@ -18,22 +18,13 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-    <Button
-        android:id="@+id/button2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/check_in"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        />
-    <Button
-        android:id="@+id/button3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/check_out"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentBottom="true"
-        />
+   <fragment
+       android:id="@+id/MapFunctions"
+       android:name="com.example.gio.autostop.MapFunctions"
+       class="com.example.gio.autostop.MapFunctions"
+       android:layout_height="match_parent"
+       android:layout_width="match_parent"   />
 
-        <include layout="@layout/fragment_address_fragment" />
+        <!--<include layout="@layout/fragment_address_fragment" />-->
+
 </RelativeLayout>
