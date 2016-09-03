@@ -20,8 +20,8 @@
 
    <fragment
        android:id="@+id/MapFunctions"
-       android:name="com.example.gio.autostop.MapFunctions"
-       class="com.example.gio.autostop.MapFunctions"
+       android:name="com.example.gio.autostop.MapFunctionsFragment"
+       class="com.example.gio.autostop.MapFunctionsFragment"
        android:layout_height="match_parent"
        android:layout_width="match_parent"   />
 

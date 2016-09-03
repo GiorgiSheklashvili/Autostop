@@ -14,55 +14,39 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
-
 public class AddressFragment extends Fragment {
-    protected TextView mLocationAddressTextView;
-    protected String mAddressOutput;
+    protected boolean AddressRequested;
+    private static final String ADDRESS_REQUESTED_KEY = "address-request-pending";
+    private static final String LOCATION_ADDRESS_KEY = "location-address";
+    private TextView mLocationAddressTextView;
+    private String mAddressOutput;
     private AddressResultReceiver mResultReceiver;
     private ProgressBar mProgressBar;
-    protected boolean mAddressRequested;
-    private  MapsActivity mapsActivity;
-    protected static final String ADDRESS_REQUESTED_KEY = "address-request-pending";
-    protected static final String LOCATION_ADDRESS_KEY = "location-address";
+    private MapsActivity mMapsActivity;
+
+
     public AddressFragment() {
         // Required empty public constructor
     }
-//Receiver for data sent from FetchAddressIntentService.
-    class AddressResultReceiver extends ResultReceiver{
-        private int CREATOR;
-        public AddressResultReceiver(Handler handler) {
-            super(handler);
-        }
 
-        @Override
-        protected void onReceiveResult(int resultCode, Bundle resultData) {
-            super.onReceiveResult(resultCode, resultData);
-            mAddressOutput = resultData.getString(Constants.RESULT_DATA_KEY);
-            displayAddressOutput();
-            mAddressRequested = false;
-            updateUIWidgets();
-        }
-    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Set defaults
         mResultReceiver = new AddressResultReceiver(new Handler());
-        mAddressRequested = false;
+        AddressRequested = false;
         mAddressOutput = " ";
         updateValuesFromBundle(savedInstanceState);
 
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_address_fragment, container, false);
     }
-    public void setMapsActivity(MapsActivity mapsActivity){
-        this.mapsActivity=mapsActivity;
-    }
+
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putBoolean(ADDRESS_REQUESTED_KEY, mAddressRequested);
+        outState.putBoolean(ADDRESS_REQUESTED_KEY, AddressRequested);
         outState.putString(LOCATION_ADDRESS_KEY, mAddressOutput);
 
     }
@@ -78,31 +62,37 @@ public class AddressFragment extends Fragment {
 
 
     }
-    public void displayAddressOutput(){
-    mLocationAddressTextView.setText(mAddressOutput);
-    }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mProgressBar = (ProgressBar) view.findViewById(R.id.progress_bar);
-        mLocationAddressTextView=(TextView) view.findViewById(R.id.address);
+        mLocationAddressTextView = (TextView) view.findViewById(R.id.address);
         updateUIWidgets();
+    }
+
+    public void displayAddressOutput() {
+        mLocationAddressTextView.setText(mAddressOutput);
+    }
+
+    public void setMapsActivity(MapsActivity mMapsActivity) {
+        this.mMapsActivity = mMapsActivity;
     }
 
     public void startIntentService() {
         Intent intent = new Intent(getContext(), FetchAddressIntentService.class);
         intent.putExtra(Constants.RECEIVER, mResultReceiver);
-        intent.putExtra(Constants.LOCATION_DATA_EXTRA, mapsActivity.mCurrentLocation);
-        mapsActivity.startService(intent);
+        intent.putExtra(Constants.LOCATION_DATA_EXTRA, mMapsActivity.mCurrentLocation);
+        mMapsActivity.startService(intent);
 
     }
+
     public void fetchAddressHandler() {
-        if (mapsActivity.mGoogleApiClient.isConnected() && mapsActivity.mCurrentLocation != null) {
-            mAddressRequested = true;
+        if (mMapsActivity.mGoogleApiClient.isConnected() && mMapsActivity.mCurrentLocation != null) {
+            AddressRequested = true;
             updateUIWidgets();
             startIntentService();
-            }
+        }
 
 
     }
@@ -110,7 +100,7 @@ public class AddressFragment extends Fragment {
     private void updateValuesFromBundle(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
             if (savedInstanceState.keySet().contains(ADDRESS_REQUESTED_KEY)) {
-                mAddressRequested = savedInstanceState.getBoolean(ADDRESS_REQUESTED_KEY);
+                AddressRequested = savedInstanceState.getBoolean(ADDRESS_REQUESTED_KEY);
             }
             if (savedInstanceState.keySet().contains(LOCATION_ADDRESS_KEY)) {
                 mAddressOutput = savedInstanceState.getString(LOCATION_ADDRESS_KEY);
@@ -120,12 +110,31 @@ public class AddressFragment extends Fragment {
         }
 
     }
+
     private void updateUIWidgets() {
 
-        if (mAddressRequested) {
+        if (AddressRequested) {
             mProgressBar.setVisibility(ProgressBar.VISIBLE);
         } else {
             mProgressBar.setVisibility(ProgressBar.GONE);
+        }
+    }
+
+    //Receiver for data sent from FetchAddressIntentService.
+    class AddressResultReceiver extends ResultReceiver {
+        private int CREATOR;
+
+        public AddressResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            super.onReceiveResult(resultCode, resultData);
+            mAddressOutput = resultData.getString(Constants.RESULT_DATA_KEY);
+            displayAddressOutput();
+            AddressRequested = false;
+            updateUIWidgets();
         }
     }
 }
