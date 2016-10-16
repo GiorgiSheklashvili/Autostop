@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:text="@string/my_location"
         android:id="@+id/button1"
-        android:layout_marginTop="@dimen/layout_marginTop_button"
-        android:layout_alignParentTop="true"
+        android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
+
 </RelativeLayout>

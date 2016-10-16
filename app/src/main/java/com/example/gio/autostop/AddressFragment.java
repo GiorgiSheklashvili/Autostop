@@ -39,7 +39,7 @@ public class AddressFragment extends Fragment {
         updateValuesFromBundle(savedInstanceState);
 
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_address_fragment, container, false);
+        return inflater.inflate(R.layout.fragment_address, container, false);
     }
 
 
