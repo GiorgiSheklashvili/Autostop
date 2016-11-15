@@ -27,7 +27,6 @@ public class FetchAddressIntentService extends IntentService {
         super("");
     }
 
-
     @Override
     protected void onHandleIntent(Intent intent) {
         String errorMessage = "";
