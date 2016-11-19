@@ -4,25 +4,36 @@ package com.example.gio.autostop;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 
 public class MainActivity extends AppCompatActivity {
-    public Button button1;
+    public ImageView goImageView;
+    public TextView driver;
+    public TextView passenger;
+    View slideView;
+    LinearLayout chooseButtonLayout;
+    Boolean choose = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        button1 = (Button) findViewById(R.id.button1);
-        button1.setOnClickListener(new View.OnClickListener() {
+        slideView = findViewById(R.id.slide_view);
+        passenger = (TextView) findViewById(R.id.passenger);
+        chooseButtonLayout = (LinearLayout) findViewById(R.id.chooseType);
+
+        goImageView = (ImageView) findViewById(R.id.imageGo);
+        goImageView.setOnClickListener(new View.OnClickListener() {
                                        @Override
                                        public void onClick(View v) {
                                            displayMap();
@@ -30,9 +41,38 @@ public class MainActivity extends AppCompatActivity {
                                    }
         );
 
+        passenger.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                ViewGroup.LayoutParams params = slideView.getLayoutParams();
+                params.height = passenger.getHeight();
+                params.width = passenger.getWidth();
+                slideView.setLayoutParams(params);
+                slideView.setBackgroundColor(getResources().getColor(R.color.dark_yellow));
+
+                passenger.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                chooseButtonLayout.setMinimumWidth(passenger.getWidth() * 2);
+            }
+        });
+        chooseButtonLayout.setOnTouchListener(new OnSwipeTouchListener(MainActivity.this) {
+
+            @Override
+            public void onSwipeRight() {
+                super.onSwipeRight();
+                slideView.animate().x(slideView.getWidth());
+                choose = true;
+            }
+
+            @Override
+            public void onSwipeLeft() {
+                super.onSwipeLeft();
+                slideView.animate().x(0);
+                choose = false;
+            }
+        });
+
 
     }
-
     public void displayMap() {
         Intent intent = new Intent(this, MapsActivity.class);
         startActivity(intent);
@@ -56,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.request_permission) {
 
-                // Permission to access the location is missing.
+            // Permission to access the location is missing.
             Intent intent = new Intent();
             intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
             Uri uri = Uri.fromParts("package", getPackageName(), null);
@@ -67,5 +107,6 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
 
 }
