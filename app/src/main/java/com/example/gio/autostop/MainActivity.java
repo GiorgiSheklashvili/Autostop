@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -31,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
         slideView = findViewById(R.id.slide_view);
         passenger = (TextView) findViewById(R.id.passenger);
         chooseButtonLayout = (LinearLayout) findViewById(R.id.chooseType);
-
         goImageView = (ImageView) findViewById(R.id.imageGo);
         goImageView.setOnClickListener(new View.OnClickListener() {
                                        @Override
@@ -48,21 +48,16 @@ public class MainActivity extends AppCompatActivity {
                 params.height = passenger.getHeight();
                 params.width = passenger.getWidth();
                 slideView.setLayoutParams(params);
-                slideView.setBackgroundColor(getResources().getColor(R.color.dark_yellow));
-
                 passenger.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                chooseButtonLayout.setMinimumWidth(passenger.getWidth() * 2);
             }
         });
         chooseButtonLayout.setOnTouchListener(new OnSwipeTouchListener(MainActivity.this) {
-
             @Override
             public void onSwipeRight() {
                 super.onSwipeRight();
                 slideView.animate().x(slideView.getWidth());
                 choose = true;
             }
-
             @Override
             public void onSwipeLeft() {
                 super.onSwipeLeft();
@@ -70,8 +65,6 @@ public class MainActivity extends AppCompatActivity {
                 choose = false;
             }
         });
-
-
     }
     public void displayMap() {
         Intent intent = new Intent(this, MapsActivity.class);

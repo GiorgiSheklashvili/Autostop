@@ -141,7 +141,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         super.onPause();
         if (mGoogleApiClient.isConnected() && startedLocationUpdate)
             stopLocationUpdates();
-
     }
 
     @Override
@@ -149,7 +148,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mMap = googleMap;
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
-        mapFunctions.setUpMap();
+        DataRequestManager.getInstance().setUpMap(this, mapFunctions.callback);
+//        mapFunctions.setUpMap();
     }
 
     @Override
@@ -253,7 +253,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMapAsync(this);
             if (mMap != null) {
-                mapFunctions.setUpMap();
+//                mapFunctions.setUpMap();
+                DataRequestManager.getInstance().setUpMap(this, mapFunctions.callback);
             }
         }
     }
@@ -264,8 +265,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 startedLocationUpdate = savedInstanceState.getBoolean(REQUESTING_LOCATION_UPDATES_KEY);
             if (savedInstanceState.keySet().contains(LOCATION_KEY))
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
-
-
         }
 
     }

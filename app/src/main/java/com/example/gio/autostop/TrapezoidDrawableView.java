@@ -23,6 +23,7 @@ public class TrapezoidDrawableView extends View {
 
     public TrapezoidDrawableView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        setLayerType(LAYER_TYPE_HARDWARE,null);
         gray = new Paint(Paint.ANTI_ALIAS_FLAG);
         white = new Paint(Paint.ANTI_ALIAS_FLAG);
         trapezoid = new Path();
@@ -31,25 +32,25 @@ public class TrapezoidDrawableView extends View {
         rightTop = new Point();
         leftBottom = new Point();
         rightBottom = new Point();
-    }
-    @Override
-    protected void onDraw(final Canvas canvas) {
-        super.onDraw(canvas);
         gray.setColor(Color.GRAY);
         gray.setStyle(Paint.Style.FILL_AND_STROKE);
         gray.setStrokeWidth(10);
         gray.setAntiAlias(true);
         trapezoid.setFillType(Path.FillType.EVEN_ODD);
+        white.setColor(Color.WHITE);
+        white.setStyle(Paint.Style.FILL_AND_STROKE);
+        white.setStrokeWidth(10);
+        white.setAntiAlias(true);
+    }
+    @Override
+    protected void onDraw(final Canvas canvas) {
+        super.onDraw(canvas);
         trapezoid.moveTo(canvas.getWidth() / 3, 0);
         trapezoid.lineTo((canvas.getWidth() * 2) / 3, 0);
         trapezoid.lineTo((canvas.getWidth() * 19) / 20, canvas.getHeight());
         trapezoid.lineTo(canvas.getWidth() / 20, canvas.getHeight());
         trapezoid.lineTo(canvas.getWidth() / 3, 0);
         canvas.drawPath(trapezoid, gray);
-        white.setColor(Color.WHITE);
-        white.setStyle(Paint.Style.FILL_AND_STROKE);
-        white.setStrokeWidth(10);
-        white.setAntiAlias(true);
         drawMiniTrapezoid(canvas);
         canvas.drawPath(miniTrapezoid, white);
 //        invalidate();

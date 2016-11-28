@@ -24,7 +24,6 @@ public class AddressFragment extends Fragment {
     private ProgressBar mProgressBar;
     private MapsActivity mMapsActivity;
 
-
     public AddressFragment() {
         // Required empty public constructor
     }
@@ -42,7 +41,6 @@ public class AddressFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_address, container, false);
     }
 
-
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -59,8 +57,6 @@ public class AddressFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-
-
     }
 
     @Override

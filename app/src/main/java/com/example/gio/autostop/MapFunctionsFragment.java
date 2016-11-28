@@ -32,6 +32,7 @@ import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 
 public class MapFunctionsFragment extends Fragment {
@@ -44,8 +45,6 @@ public class MapFunctionsFragment extends Fragment {
     public MapFunctionsFragment() {
         // Required empty public constructor
     }
-
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -59,10 +58,14 @@ public class MapFunctionsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         mCheckInButton = (Button) view.findViewById(R.id.button2);
         mCheckOutButton = (Button) view.findViewById(R.id.button3);
+        mCheckOutButton.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckOutButton"));
+        mCheckInButton.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckInButton"));
         mCheckInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 checkInCurrentPosition();
+                com.example.gio.autostop.Settings.saveBoolean("mCheckInButton",false);
+                com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton",true);
                 mCheckInButton.setClickable(false);
                 mCheckOutButton.setClickable(true);
             }
@@ -71,18 +74,21 @@ public class MapFunctionsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 deletePosition();
+
                 markerForDeletion.remove();
+                com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton",false);
+                com.example.gio.autostop.Settings.saveBoolean("mCheckInButton",true);
                 mCheckOutButton.setClickable(false);
                 mCheckInButton.setClickable(true);
             }
         });
-        mCheckOutButton.setClickable(false);
+//        mCheckOutButton.setClickable(false);
     }
+
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-
     }
 
     @Override
@@ -95,42 +101,15 @@ public class MapFunctionsFragment extends Fragment {
 
     }
 
-    public void setUpMap() {
-        Response.Listener<String> responseListener = new Response.Listener<String>() {
-            @Override
-            public void onResponse(String s) {
-                try {
-                    JSONObject jsonResponse = new JSONObject(s);
-                    boolean success = jsonResponse.getBoolean("success");
-                    if (success) {
-                        JSONArray jsonArray = jsonResponse.getJSONArray("data");
-                        JSONObject jsonObject;
-                        for (int i = 0; i < jsonArray.length(); i++) {
-                            jsonObject = jsonArray.getJSONObject(i);
-                            String mac = jsonObject.getString("mac");
-                            String android_id = jsonObject.getString("android_id");
-                            Double latitude = jsonObject.getDouble("latitude");
-                            Double longitude = jsonObject.getDouble("longitude");
-                            if (!isMarkerOnArray(mMarkerCollection, latitude, longitude))
-                                mMarkerCollection.add(mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude))));
-                        }
 
-                    } else {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                        builder.setMessage("Downloading position failed")
-                                .setNegativeButton("retry", null)
-                                .create()
-                                .show();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        DownloadPosition downloadPosition = new DownloadPosition(responseListener);
-        RequestQueue queue = Volley.newRequestQueue(getActivity());
-        queue.add(downloadPosition);
-    }
+    public MapRequestRequestCallback callback = new MapRequestRequestCallback() {
+        @Override
+        public void onRequestedLoaded(double lon, double lat) {
+            if (!isMarkerOnArray(mMarkerCollection, lat, lon))
+                mMarkerCollection.add(mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon))));
+
+        }
+    };
 
     public void checkInCurrentPosition() {
         if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -158,6 +137,8 @@ public class MapFunctionsFragment extends Fragment {
         }
         LatLng newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
         markerForDeletion = mMapsActivity.mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
+        com.example.gio.autostop.Settings.saveLong("Latitude",Double.doubleToLongBits(location.getLatitude()));
+        com.example.gio.autostop.Settings.saveLong("Longitude",Double.doubleToLongBits(location.getLongitude()));
         String deviceId = Settings.Secure.getString(mMapsActivity.getContentResolver(), Settings.Secure.ANDROID_ID);
         Positions position = new Positions(newLatLng.latitude, newLatLng.longitude, getWifiMacAddress(), deviceId);
         Response.Listener<String> responseListener = new Response.Listener<String>() {
@@ -182,7 +163,6 @@ public class MapFunctionsFragment extends Fragment {
         UploadPosition upload = new UploadPosition(position, responseListener);
         RequestQueue queue = Volley.newRequestQueue(getActivity());
         queue.add(upload);
-
     }
 
     public void deletePosition() {

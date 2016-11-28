@@ -12,13 +12,13 @@
         android:layout_height="wrap_content"
         android:text="@string/check_in"
         android:layout_gravity="bottom|start"
-        />
+        android:clickable="false" />
     <Button
         android:id="@+id/button3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/check_out"
         android:layout_gravity="bottom|end"
-        />
+        android:clickable="false" />
 
 </FrameLayout>
