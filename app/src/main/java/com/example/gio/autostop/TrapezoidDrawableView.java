@@ -53,7 +53,7 @@ public class TrapezoidDrawableView extends View {
         canvas.drawPath(trapezoid, gray);
         drawMiniTrapezoid(canvas);
         canvas.drawPath(miniTrapezoid, white);
-//        invalidate();
+        invalidate();
 
     }
 

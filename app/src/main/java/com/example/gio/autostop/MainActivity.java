@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
         goImageView.setOnClickListener(new View.OnClickListener() {
                                        @Override
                                        public void onClick(View v) {
-                                           displayMap();
+                                           displayMap(choose);
                                        }
                                    }
         );
@@ -66,8 +66,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-    public void displayMap() {
+    public void displayMap(boolean choose) {
         Intent intent = new Intent(this, MapsActivity.class);
+        intent.putExtra(Constants.chosenMode,choose);
         startActivity(intent);
     }
 

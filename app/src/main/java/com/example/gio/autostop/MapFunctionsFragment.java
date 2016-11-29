@@ -24,7 +24,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -32,7 +31,6 @@ import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 
 public class MapFunctionsFragment extends Fragment {
@@ -41,6 +39,7 @@ public class MapFunctionsFragment extends Fragment {
     private MapsActivity mMapsActivity;
     private ArrayList<Marker> mMarkerCollection = new ArrayList<>();
     private Button mCheckInButton, mCheckOutButton;
+    String myMac,deviceId;
 
     public MapFunctionsFragment() {
         // Required empty public constructor
@@ -82,7 +81,7 @@ public class MapFunctionsFragment extends Fragment {
                 mCheckInButton.setClickable(true);
             }
         });
-//        mCheckOutButton.setClickable(false);
+
     }
 
 
@@ -104,8 +103,15 @@ public class MapFunctionsFragment extends Fragment {
 
     public MapRequestRequestCallback callback = new MapRequestRequestCallback() {
         @Override
-        public void onRequestedLoaded(double lon, double lat) {
+        public void onRequestedLoaded(double lat, double lon,String mac,String android_id) {
+            deviceId = Settings.Secure.getString(mMapsActivity.getContentResolver(), Settings.Secure.ANDROID_ID);
+            myMac = getWifiMacAddress();
             if (!isMarkerOnArray(mMarkerCollection, lat, lon))
+                if(myMac.equals( mac )&& deviceId.equals(android_id)){
+                    markerForDeletion=mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)));
+                    mMarkerCollection.add(markerForDeletion);
+                }
+                else
                 mMarkerCollection.add(mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon))));
 
         }

@@ -6,7 +6,7 @@ package com.example.gio.autostop;
 
 public abstract class MapRequestRequestCallback {
 
-    void onRequestedLoaded(double lon, double lat){
+    void onRequestedLoaded(double lat, double lon,String mac,String android_id){
 
         }
 

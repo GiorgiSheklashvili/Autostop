@@ -20,4 +20,5 @@
     <string name="passenger">Passenger</string>
     <string name="i_m_a">I\'m a</string>
     <string name="go">Go</string>
+    <string name="seats">How many seat do you have?</string>
 </resources>

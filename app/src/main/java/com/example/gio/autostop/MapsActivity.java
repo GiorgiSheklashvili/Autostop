@@ -14,6 +14,8 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -45,8 +47,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public Location mCurrentLocation;
     public AddressFragment AddressFragment;
     public MapFunctionsFragment mapFunctions;
+    public DriverFragment driverFragment;
     public GoogleMap mMap;// Might be null if Google Play services APK is not available.
     private String mLastUpdateTime;
+    private boolean mChoosedMode;
     private final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     private final static String LOCATION_KEY = "location-key";
     private static final String TAG = "main-activity";
@@ -55,11 +59,21 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        Intent intent = getIntent();
+        mChoosedMode=intent.getBooleanExtra(Constants.chosenMode,false);
+
         setUpMapIfNeeded();
         AddressFragment = (AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
         AddressFragment.setMapsActivity(this);
-        mapFunctions = (MapFunctionsFragment) getSupportFragmentManager().findFragmentById(R.id.MapFunctions);
+        mapFunctions=new MapFunctionsFragment();
         mapFunctions.setMapsActivity(this);
+        driverFragment=new DriverFragment();
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        if(!mChoosedMode)
+            ft.replace(R.id.placeholder,mapFunctions);
+        else
+            ft.replace(R.id.placeholder,driverFragment);
+        ft.commit();
         startedLocationUpdate = false;
         permissionRequestCounter = 0;
         mGoogleApiClient = new GoogleApiClient.Builder(this)
