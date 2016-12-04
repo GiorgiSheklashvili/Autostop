@@ -16,14 +16,20 @@ import android.view.animation.Transformation;
 
 
 public class TrapezoidDrawableView extends View {
-    Paint white,gray;
+    Paint white, gray, black;
     int whiteInt;
-    Point[] leftTop = new Point[4];
-    Point[] rightTop = new Point[4];
-    Point[] leftBottom = new Point[4];
-    Point[] rightBottom = new Point[4];
+    Point[] leftTop = new Point[3];
+    Point[] rightTop = new Point[3];
+    Point[] leftBottom = new Point[3];
+    Point[] rightBottom = new Point[3];
     Path trapezoid;
-    Path [] miniTrapezoid =new Path[4];
+    boolean oneThird = false;
+    boolean twoThird = false;
+    Path miniTrapezoid0, miniTrapezoid1, miniTrapezoid2;
+    int width;
+    double height;
+
+
     public TrapezoidDrawableView(Context context) {
         super(context);
         init();
@@ -35,33 +41,40 @@ public class TrapezoidDrawableView extends View {
     }
 
     private void init() {
-        for(int i=0;i<miniTrapezoid.length;i++){
-        miniTrapezoid[i] = new Path();
-        }
+        miniTrapezoid0 = new Path();
+        miniTrapezoid1 = new Path();
+        miniTrapezoid2 = new Path();
         trapezoid = new Path();
         whiteInt = ContextCompat.getColor(getContext(), R.color.white);
         white = new Paint();
         white.setAntiAlias(true);
         white.setStyle(Paint.Style.FILL);
         white.setColor(whiteInt);
+
+
+        black = new Paint();
+        black.setAntiAlias(true);
+        black.setStyle(Paint.Style.FILL);
+        black.setColor(ContextCompat.getColor(getContext(), R.color.black));
+
         gray = new Paint();
         gray.setAntiAlias(true);
         gray.setColor(Color.GRAY);
         gray.setStyle(Paint.Style.FILL_AND_STROKE);
         gray.setStrokeWidth(10);
         gray.setAntiAlias(true);
-        for(int i=0;i<4;i++){
-            leftTop[i]=new Point();
-            leftBottom[i]=new Point();
-            rightTop[i]=new Point();
-            rightBottom[i]=new Point();
+        for (int i = 0; i < 3; i++) {
+            leftTop[i] = new Point();
+            leftBottom[i] = new Point();
+            rightTop[i] = new Point();
+            rightBottom[i] = new Point();
         }
         startScrolling();
     }
 
     public void startScrolling() {
-        ScrollingAnimation animation=new ScrollingAnimation();
-        animation.setDuration(2500);
+        ScrollingAnimation animation = new ScrollingAnimation();
+        animation.setDuration(1500);
         animation.setRepeatCount(Animation.INFINITE);
         startAnimation(animation);
     }
@@ -76,20 +89,45 @@ public class TrapezoidDrawableView extends View {
         trapezoid.lineTo(canvas.getWidth() / 20, canvas.getHeight());
         trapezoid.lineTo(canvas.getWidth() / 3, 0);
         canvas.drawPath(trapezoid, gray);
-        for(int i=0;i<miniTrapezoid.length;i++){
-        drawMiniTrapezoid(canvas,i);
-        canvas.drawPath(miniTrapezoid[i], white);
+        drawMiniTrapezoid(canvas, miniTrapezoid0, 0);
+        canvas.drawPath(miniTrapezoid0, white);
+        if (reachedOneThird(leftTop[0].y)) {
+            oneThird = true;
+            drawMiniTrapezoid(canvas, miniTrapezoid1, 1);
+            canvas.drawPath(miniTrapezoid1, black);
         }
+//        if (reachedTwoThird(leftTop[0].y) && reachedOneThird(leftTop[1].y)) {
+//            twoThird = true;
+//            drawMiniTrapezoid(canvas, miniTrapezoid2, 2);
+//            canvas.drawPath(miniTrapezoid2, white);
+//        }
+
+
+
     }
-    public void drawMiniTrapezoid(Canvas canvas,int i) {
-        miniTrapezoid[i].reset();
-        miniTrapezoid[i].setFillType(Path.FillType.EVEN_ODD);
-        miniTrapezoid[i].moveTo(canvas.getWidth() * 40 / 81 - leftTop[i].x, leftTop[i].y);
-        miniTrapezoid[i].lineTo(canvas.getWidth() * 41 / 81 + rightTop[i].x, rightTop[i].y);
-        miniTrapezoid[i].lineTo(canvas.getWidth() * 42 / 81 + rightBottom[i].x, (canvas.getHeight() / 5) + rightBottom[i].y);
-        miniTrapezoid[i].lineTo(canvas.getWidth() * 39 / 81 - leftBottom[i].x, (canvas.getHeight() / 5) + leftBottom[i].y);
-        miniTrapezoid[i].lineTo(canvas.getWidth() * 40 / 81 - leftTop[i].x, leftTop[i].y);
+
+    public void drawMiniTrapezoid(Canvas canvas, Path path, int i) {
+        path.reset();
+        path.setFillType(Path.FillType.EVEN_ODD);
+        path.moveTo(canvas.getWidth() * 40 / 81 - leftTop[i].x, leftTop[i].y);
+        path.lineTo(canvas.getWidth() * 41 / 81 + rightTop[i].x, rightTop[i].y);
+        path.lineTo(canvas.getWidth() * 42 / 81 + rightBottom[i].x, (canvas.getHeight() / 5) + rightBottom[i].y);
+        path.lineTo(canvas.getWidth() * 39 / 81 - leftBottom[i].x, (canvas.getHeight() / 5) + leftBottom[i].y);
+        path.lineTo(canvas.getWidth() * 40 / 81 - leftTop[i].x, leftTop[i].y);
     }
+
+    public boolean reachedOneThird(double y) {
+        if (y >= height / 3.0)
+            return true;
+        return false;
+    }
+
+    public boolean reachedTwoThird(double y) {
+        if (y >= height * 3.0 / 4.0)
+            return true;
+        return false;
+    }
+
     private class ScrollingAnimation extends Animation {
         public ScrollingAnimation() {
             setAnimationListener(new AnimationListener() {
@@ -111,10 +149,10 @@ public class TrapezoidDrawableView extends View {
             });
         }
 
-
         @Override
         protected void applyTransformation(float interpolatedTime, Transformation t) {
             super.applyTransformation(interpolatedTime, t);
+            displayWidthandHeight();// initshia gasatani  tu initidan shemovedi aq ar vamateb arapers
             leftTop[0].x = leftTop[0].x + 1;
             leftTop[0].y = leftTop[0].y + 10;
             rightTop[0].x = rightTop[0].x + 1;
@@ -123,7 +161,7 @@ public class TrapezoidDrawableView extends View {
             rightBottom[0].y = rightBottom[0].y + 10;
             leftBottom[0].x = leftBottom[0].x + 1;
             leftBottom[0].y = leftBottom[0].y + 10;
-            if (interpolatedTime > 0.25) {
+            if (oneThird) {
                 leftTop[1].x = leftTop[1].x + 1;
                 leftTop[1].y = leftTop[1].y + 10;
                 rightTop[1].x = rightTop[1].x + 1;
@@ -133,7 +171,7 @@ public class TrapezoidDrawableView extends View {
                 leftBottom[1].x = leftBottom[1].x + 1;
                 leftBottom[1].y = leftBottom[1].y + 10;
             }
-            if (interpolatedTime > 0.5) {
+            if (twoThird) {
                 leftTop[2].x = leftTop[2].x + 1;
                 leftTop[2].y = leftTop[2].y + 10;
                 rightTop[2].x = rightTop[2].x + 1;
@@ -143,43 +181,45 @@ public class TrapezoidDrawableView extends View {
                 leftBottom[2].x = leftBottom[2].x + 1;
                 leftBottom[2].y = leftBottom[2].y + 10;
             }
-            if (interpolatedTime > 0.75) {
-                leftTop[3].x = leftTop[3].x + 1;
-                leftTop[3].y = leftTop[3].y + 10;
-                rightTop[3].x = rightTop[3].x + 1;
-                rightTop[3].y = rightTop[3].y + 10;
-                rightBottom[3].x = rightBottom[3].x + 1;
-                rightBottom[3].y = rightBottom[3].y + 10;
-                leftBottom[3].x = leftBottom[3].x + 1;
-                leftBottom[3].y = leftBottom[3].y + 10;
-            }
-            for(int k=0;k<4;k++){
-            if(checkingIfSurpassed(leftTop[k].y))
-                makeZero(k);
-            }
+
+            if (checkingIfSurpassed(leftTop[0].y))
+                makeZero(0);
+
+            if (checkingIfSurpassed(leftTop[1].y))
+                makeZero(1);
+//            if (checkingIfSurpassed(leftTop[2].y))
+//                makeZero(2);
             TrapezoidDrawableView.this.requestLayout();
             TrapezoidDrawableView.this.invalidate();
         }
-        public boolean checkingIfSurpassed(int Ycoordinate){
+
+        public boolean checkingIfSurpassed(int Ycoordinate) {
+
+            return Ycoordinate >= (int) height;
+        }
+
+        public void displayWidthandHeight() {
             WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
             Display display = wm.getDefaultDisplay();
             Point size = new Point();
             display.getSize(size);
-            return Ycoordinate > size.y;
-
+            width = size.x;
+            height = (size.y * 1.0) / 3.0;
         }
-        public void makeZero(int i){
+
+
+        public void makeZero(int i) {
             leftTop[i].x = 0;
             leftTop[i].y = 0;
             rightTop[i].x = 0;
             rightTop[i].y = 0;
             rightBottom[i].x = 0;
-            rightBottom[i].y =0;
+            rightBottom[i].y = 0;
             leftBottom[i].x = 0;
-            leftBottom[i].y =0;
+            leftBottom[i].y = 0;
         }
-
 
 
     }
 }
+
