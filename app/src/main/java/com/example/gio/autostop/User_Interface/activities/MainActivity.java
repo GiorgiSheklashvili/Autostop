@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -34,14 +35,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         slideView = findViewById(R.id.slide_view);
         passenger = (TextView) findViewById(R.id.passenger);
+        driver = (TextView) findViewById(R.id.driver);
         chooseButtonLayout = (LinearLayout) findViewById(R.id.chooseType);
         goImageView = (ImageView) findViewById(R.id.imageGo);
         goImageView.setOnClickListener(new View.OnClickListener() {
-                                       @Override
-                                       public void onClick(View v) {
-                                           displayMap(choose);
+                                           @Override
+                                           public void onClick(View v) {
+                                               displayMap(choose);
+                                           }
                                        }
-                                   }
         );
 
         passenger.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -54,6 +56,22 @@ public class MainActivity extends AppCompatActivity {
                 passenger.getViewTreeObserver().removeGlobalOnLayoutListener(this);
             }
         });
+        passenger.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                slideView.animate().x(0);
+                choose = false;
+                return false;
+            }
+        });
+        driver.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                slideView.animate().x(slideView.getWidth());
+                choose = true;
+                return false;
+            }
+        });
         chooseButtonLayout.setOnTouchListener(new OnSwipeTouchListener(MainActivity.this) {
             @Override
             public void onSwipeRight() {
@@ -61,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
                 slideView.animate().x(slideView.getWidth());
                 choose = true;
             }
+
             @Override
             public void onSwipeLeft() {
                 super.onSwipeLeft();
@@ -69,9 +88,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
     public void displayMap(boolean choose) {
         Intent intent = new Intent(this, MapsActivity.class);
-        intent.putExtra(Constants.chosenMode,choose);
+        intent.putExtra(Constants.chosenMode, choose);
         startActivity(intent);
     }
 
