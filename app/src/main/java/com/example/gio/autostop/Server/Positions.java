@@ -1,4 +1,4 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.Server;
 
 
 public class Positions {
@@ -6,7 +6,7 @@ public class Positions {
     private double longitude;
     private String mac;
     private String androidId;
-    Positions(double lat,double longT,String mac,String androidId){
+    public Positions(double lat,double longT,String mac,String androidId){
 this.latitude=lat;
         this.longitude=longT;
         this.mac=mac;

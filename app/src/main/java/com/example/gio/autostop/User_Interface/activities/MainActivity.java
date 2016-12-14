@@ -1,4 +1,4 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.User_Interface.activities;
 
 
 import android.content.Intent;
@@ -8,13 +8,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.example.gio.autostop.Constants;
+import com.example.gio.autostop.User_Interface.OnSwipeTouchListener;
+import com.example.gio.autostop.R;
 
 
 public class MainActivity extends AppCompatActivity {

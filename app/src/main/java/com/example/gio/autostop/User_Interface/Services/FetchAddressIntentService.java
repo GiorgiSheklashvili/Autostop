@@ -1,4 +1,4 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.User_Interface.services;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -9,6 +9,9 @@ import android.os.Bundle;
 import android.os.ResultReceiver;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.example.gio.autostop.Constants;
+import com.example.gio.autostop.R;
 
 import java.io.IOException;
 import java.util.ArrayList;

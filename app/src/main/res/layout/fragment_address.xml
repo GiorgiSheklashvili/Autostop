@@ -3,7 +3,7 @@
     android:id="@+id/fragment_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".AddressFragment"
+    tools:context=".User_Interface.fragments.AddressFragment"
     android:background="@android:color/transparent">
     <TextView
         android:id="@+id/address"

@@ -1,4 +1,4 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.User_Interface.activities;
 
 import android.Manifest;
 import android.content.Context;
@@ -8,13 +8,17 @@ import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.location.Location;
 
+import com.example.gio.autostop.Constants;
+import com.example.gio.autostop.Server.DataRequestManager;
+import com.example.gio.autostop.R;
+import com.example.gio.autostop.User_Interface.fragments.DriverFragment;
+import com.example.gio.autostop.User_Interface.fragments.MapFunctionsFragment;
 import com.google.android.gms.location.LocationListener;
 
 import android.location.LocationManager;
 import android.os.Build;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -45,7 +49,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public Boolean startedLocationUpdate;
     public LocationRequest locationRequest;
     public Location mCurrentLocation;
-    public AddressFragment AddressFragment;
+    public com.example.gio.autostop.User_Interface.fragments.AddressFragment AddressFragment;
     public MapFunctionsFragment mapFunctions;
     public DriverFragment driverFragment;
     public GoogleMap mMap;// Might be null if Google Play services APK is not available.
@@ -63,7 +67,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mChoosedMode=intent.getBooleanExtra(Constants.chosenMode,false);
 
         setUpMapIfNeeded();
-        AddressFragment = (AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
+        AddressFragment = (com.example.gio.autostop.User_Interface.fragments.AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
         AddressFragment.setMapsActivity(this);
         mapFunctions=new MapFunctionsFragment();
         mapFunctions.setMapsActivity(this);

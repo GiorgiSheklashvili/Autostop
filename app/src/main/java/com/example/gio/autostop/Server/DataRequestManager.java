@@ -1,7 +1,6 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.Server;
 
 import android.app.Activity;
-import android.provider.ContactsContract;
 import android.support.v7.app.AlertDialog;
 
 import com.android.volley.RequestQueue;

@@ -1,4 +1,4 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.User_Interface.fragments;
 
 import android.content.Context;
 import android.content.Intent;
@@ -13,9 +13,14 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.example.gio.autostop.Constants;
+import com.example.gio.autostop.User_Interface.services.FetchAddressIntentService;
+import com.example.gio.autostop.R;
+import com.example.gio.autostop.User_Interface.activities.MapsActivity;
+
 
 public class AddressFragment extends Fragment {
-    protected boolean AddressRequested;
+    public boolean AddressRequested;
     private static final String ADDRESS_REQUESTED_KEY = "address-request-pending";
     private static final String LOCATION_ADDRESS_KEY = "location-address";
     private TextView mLocationAddressTextView;

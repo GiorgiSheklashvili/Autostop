@@ -1,4 +1,4 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.User_Interface.fragments;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -9,6 +9,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import com.example.gio.autostop.R;
 
 public class DriverFragment extends Fragment {
     private Spinner spinner;

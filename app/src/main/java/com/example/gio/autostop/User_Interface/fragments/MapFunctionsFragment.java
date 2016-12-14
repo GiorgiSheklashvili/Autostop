@@ -1,4 +1,4 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.User_Interface.fragments;
 
 import android.Manifest;
 import android.content.Context;
@@ -20,6 +20,12 @@ import android.widget.Button;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.toolbox.Volley;
+import com.example.gio.autostop.Server.DeletePosition;
+import com.example.gio.autostop.Server.MapRequestRequestCallback;
+import com.example.gio.autostop.Server.Positions;
+import com.example.gio.autostop.R;
+import com.example.gio.autostop.Server.UploadPosition;
+import com.example.gio.autostop.User_Interface.activities.MapsActivity;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -31,7 +37,6 @@ import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 
 public class MapFunctionsFragment extends Fragment {
     public Marker markerForDeletion;
@@ -113,7 +118,6 @@ public class MapFunctionsFragment extends Fragment {
                 }
                 else
                 mMarkerCollection.add(mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon))));
-
         }
     };
 
