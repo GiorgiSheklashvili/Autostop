@@ -78,7 +78,6 @@ public class MapFunctionsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 deletePosition();
-
                 markerForDeletion.remove();
                 com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton",false);
                 com.example.gio.autostop.Settings.saveBoolean("mCheckInButton",true);

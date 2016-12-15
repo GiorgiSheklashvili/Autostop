@@ -29,6 +29,14 @@ public class Settings {
         editor.putLong(key,value);
         commit();
     }
+    public static String getString(String key) {
+        return sharedPreferences.getString(key,"error");
+    }
+    public static void saveString(String key,String value){
+        editor.putString(key,value);
+        commit();
+    }
+
     public static Long getLong(String key){
         return sharedPreferences.getLong(key,0);
     }

@@ -49,7 +49,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public Boolean startedLocationUpdate;
     public LocationRequest locationRequest;
     public Location mCurrentLocation;
-    public com.example.gio.autostop.User_Interface.fragments.AddressFragment AddressFragment;
+//    public com.example.gio.autostop.User_Interface.fragments.AddressFragment AddressFragment;
     public MapFunctionsFragment mapFunctions;
     public DriverFragment driverFragment;
     public GoogleMap mMap;// Might be null if Google Play services APK is not available.
@@ -67,8 +67,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mChoosedMode=intent.getBooleanExtra(Constants.chosenMode,false);
 
         setUpMapIfNeeded();
-        AddressFragment = (com.example.gio.autostop.User_Interface.fragments.AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
-        AddressFragment.setMapsActivity(this);
+//        AddressFragment = (com.example.gio.autostop.User_Interface.fragments.AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
+//        AddressFragment.setMapsActivity(this);
         mapFunctions=new MapFunctionsFragment();
         mapFunctions.setMapsActivity(this);
         driverFragment=new DriverFragment();
@@ -128,9 +128,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 Toast.makeText(this, R.string.no_geocoder_available, Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (AddressFragment.AddressRequested) {
-                AddressFragment.startIntentService();
-            }
+//            if (AddressFragment.AddressRequested) {
+//                AddressFragment.startIntentService();
+//            }
         }
     }
 
@@ -195,7 +195,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-        AddressFragment.fetchAddressHandler();
+//        AddressFragment.fetchAddressHandler();
     }
 
 
