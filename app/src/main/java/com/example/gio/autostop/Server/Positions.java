@@ -6,12 +6,20 @@ public class Positions {
     private double longitude;
     private String mac;
     private String androidId;
-    public Positions(double lat,double longT,String mac,String androidId){
-this.latitude=lat;
-        this.longitude=longT;
-        this.mac=mac;
-        this.androidId=androidId;
+    private double latitudeDestination;
+    private double longitudeDestination;
+    private boolean kindOfUser;
+
+    public Positions(double lat, double longT, double latitudeDestination, double longitudeDestination, boolean kindOfUser, String mac, String androidId) {
+        this.latitude = lat;
+        this.longitude = longT;
+        this.mac = mac;
+        this.androidId = androidId;
+        this.latitudeDestination = latitudeDestination;
+        this.longitudeDestination = longitudeDestination;
+        this.kindOfUser = kindOfUser;
     }
+
     public double getLatitude() {
         return latitude;
     }
@@ -30,4 +38,15 @@ this.latitude=lat;
         return mac;
     }
 
+    public double getLatitudeDestination() {
+        return latitudeDestination;
+    }
+
+    public double getLongitudeDestination() {
+        return longitudeDestination;
+    }
+
+    public boolean getIsKindOfUser() {
+        return kindOfUser;
+    }
 }

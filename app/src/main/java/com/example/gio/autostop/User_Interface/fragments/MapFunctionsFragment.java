@@ -20,6 +20,7 @@ import android.widget.Button;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.toolbox.Volley;
+import com.example.gio.autostop.App;
 import com.example.gio.autostop.Server.DeletePosition;
 import com.example.gio.autostop.Server.MapRequestRequestCallback;
 import com.example.gio.autostop.Server.Positions;
@@ -39,16 +40,24 @@ import java.util.Collections;
 import java.util.List;
 
 public class MapFunctionsFragment extends Fragment {
-    public Marker markerForDeletion;
-    public LocationManager locationManager;
-    private MapsActivity mMapsActivity;
+    public static Marker markerForDeletion, markerForDeletionDestination;
+    public static LocationManager locationManager;
+    private static MapsActivity mMapsActivity;
+    private static Location location;
+    private static LatLng newLatLng;
     private ArrayList<Marker> mMarkerCollection = new ArrayList<>();
     private Button mCheckInButton, mCheckOutButton;
-    String myMac,deviceId;
+    String myMac, deviceId;
+    static Boolean chosenMode1 =false;
+
+    public static void setMarkerForDeletionDestination(Marker marker) {
+        markerForDeletionDestination = marker;
+    }
 
     public MapFunctionsFragment() {
         // Required empty public constructor
     }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -68,8 +77,8 @@ public class MapFunctionsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 checkInCurrentPosition();
-                com.example.gio.autostop.Settings.saveBoolean("mCheckInButton",false);
-                com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton",true);
+                com.example.gio.autostop.Settings.saveBoolean("mCheckInButton", false);
+                com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", true);
                 mCheckInButton.setClickable(false);
                 mCheckOutButton.setClickable(true);
             }
@@ -79,8 +88,11 @@ public class MapFunctionsFragment extends Fragment {
             public void onClick(View v) {
                 deletePosition();
                 markerForDeletion.remove();
-                com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton",false);
-                com.example.gio.autostop.Settings.saveBoolean("mCheckInButton",true);
+                markerForDeletion = null;
+                if(markerForDeletionDestination!=null)
+                markerForDeletionDestination.remove();
+                com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", false);
+                com.example.gio.autostop.Settings.saveBoolean("mCheckInButton", true);
                 mCheckOutButton.setClickable(false);
                 mCheckInButton.setClickable(true);
             }
@@ -104,30 +116,31 @@ public class MapFunctionsFragment extends Fragment {
 
     }
 
+    public static boolean isMarkerForDeletionInitialized() {
+        return markerForDeletion != null;
+    }
 
     public MapRequestRequestCallback callback = new MapRequestRequestCallback() {
         @Override
-        public void onRequestedLoaded(double lat, double lon,String mac,String android_id) {
+        public void onRequestedLoaded(double lat, double lon, String mac, String android_id) {
             deviceId = Settings.Secure.getString(mMapsActivity.getContentResolver(), Settings.Secure.ANDROID_ID);
             myMac = getWifiMacAddress();
             if (!isMarkerOnArray(mMarkerCollection, lat, lon))
-                if(myMac.equals( mac )&& deviceId.equals(android_id)){
-                    markerForDeletion=mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)));
+                if (myMac.equals(mac) && deviceId.equals(android_id)) {
+                    markerForDeletion = mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)));
                     mMarkerCollection.add(markerForDeletion);
-                }
-                else
-                mMarkerCollection.add(mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon))));
+                } else
+                    mMarkerCollection.add(mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon))));
         }
     };
 
-    public void checkInCurrentPosition() {
-        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+    public static void checkInCurrentPosition() {
+        if (ActivityCompat.checkSelfPermission(App.getAppContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(App.getAppContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        locationManager = (LocationManager) App.getAppContext().getSystemService(Context.LOCATION_SERVICE);
         Location locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         Location locationNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        Location location;
         long GPSLocationTime = 0;
         if (null != locationGPS) {
             GPSLocationTime = locationGPS.getTime();
@@ -144,12 +157,19 @@ public class MapFunctionsFragment extends Fragment {
         } else {
             location = locationNet;
         }
-        LatLng newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+        newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+        if(!chosenMode1)
         markerForDeletion = mMapsActivity.mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
-        com.example.gio.autostop.Settings.saveLong("Latitude",Double.doubleToLongBits(location.getLatitude()));
-        com.example.gio.autostop.Settings.saveLong("Longitude",Double.doubleToLongBits(location.getLongitude()));
+    }
+
+    public static void uploadingPosition(LatLng destinationPosition, Boolean chosenMode) {
+        chosenMode1=chosenMode;
+        if(chosenMode)
+        checkInCurrentPosition();
+        com.example.gio.autostop.Settings.saveLong("Latitude", Double.doubleToLongBits(location.getLatitude()));
+        com.example.gio.autostop.Settings.saveLong("Longitude", Double.doubleToLongBits(location.getLongitude()));
         String deviceId = Settings.Secure.getString(mMapsActivity.getContentResolver(), Settings.Secure.ANDROID_ID);
-        Positions position = new Positions(newLatLng.latitude, newLatLng.longitude, getWifiMacAddress(), deviceId);
+        Positions position = new Positions(newLatLng.latitude, newLatLng.longitude, destinationPosition.latitude, destinationPosition.longitude, chosenMode, getWifiMacAddress(), deviceId);
         Response.Listener<String> responseListener = new Response.Listener<String>() {
             @Override
             public void onResponse(String s) {
@@ -157,7 +177,7 @@ public class MapFunctionsFragment extends Fragment {
                     JSONObject jsonResponse = new JSONObject(s);
                     boolean success = jsonResponse.getBoolean("success");
                     if (!success) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                        AlertDialog.Builder builder = new AlertDialog.Builder(App.getAppContext());
                         builder.setMessage("uploading position failed")
                                 .setNegativeButton("retry", null)
                                 .create()
@@ -170,7 +190,7 @@ public class MapFunctionsFragment extends Fragment {
             }
         };
         UploadPosition upload = new UploadPosition(position, responseListener);
-        RequestQueue queue = Volley.newRequestQueue(getActivity());
+        RequestQueue queue = Volley.newRequestQueue(App.getAppContext());
         queue.add(upload);
     }
 
@@ -199,6 +219,7 @@ public class MapFunctionsFragment extends Fragment {
         RequestQueue queue = Volley.newRequestQueue(getActivity());
         queue.add(delete);
     }
+
 
     public static String getWifiMacAddress() {
         try {

@@ -44,6 +44,9 @@ public class DataRequestManager {
                             String android_id = jsonObject.getString("android_id");
                             Double latitude = jsonObject.getDouble("latitude");
                             Double longitude = jsonObject.getDouble("longitude");
+                            Double latitudeDestination = jsonObject.getDouble("latitudeDestination");
+                            Double longitudeDestination = jsonObject.getDouble("longitudeDestination");
+                            Boolean kindOfUser=jsonObject.getBoolean("kindOfUser");
                             callback.onRequestedLoaded(latitude, longitude,mac,android_id);
                         }
                     } else {

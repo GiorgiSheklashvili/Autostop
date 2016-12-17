@@ -16,8 +16,10 @@ public class UploadPosition extends StringRequest {
         params.put("android_id",position.getAndroidId());
         params.put("latitude",position.getLatitude()+"");
         params.put("longitude",position.getLongitude()+"");
+        params.put("latitudeDestination",position.getLongitudeDestination()+"");
+        params.put("longitudeDestination",position.getLatitudeDestination()+"");
+        params.put("kindOfUser",position.getIsKindOfUser()+"");
     }
-
     @Override
     public Map<String, String> getParams() {
         return params;

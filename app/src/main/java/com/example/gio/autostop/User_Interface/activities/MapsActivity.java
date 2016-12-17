@@ -32,13 +32,17 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.text.DateFormat;
 import java.util.Date;
 
 public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
-        GoogleApiClient.ConnectionCallbacks {
+        GoogleApiClient.ConnectionCallbacks, GoogleMap.OnMapLongClickListener {
 
 
     public final static int MILISECONDS_PER_SECOND = 1000;
@@ -48,13 +52,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public GoogleApiClient mGoogleApiClient;
     public Boolean startedLocationUpdate;
     public LocationRequest locationRequest;
+    public Marker markerForDeletionDestination;
     public Location mCurrentLocation;
-//    public com.example.gio.autostop.User_Interface.fragments.AddressFragment AddressFragment;
+    //    public com.example.gio.autostop.User_Interface.fragments.AddressFragment AddressFragment;
     public MapFunctionsFragment mapFunctions;
     public DriverFragment driverFragment;
     public GoogleMap mMap;// Might be null if Google Play services APK is not available.
     private String mLastUpdateTime;
-    private boolean mChoosedMode;
+    private boolean mChosenMode;
     private final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     private final static String LOCATION_KEY = "location-key";
     private static final String TAG = "main-activity";
@@ -64,19 +69,19 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         Intent intent = getIntent();
-        mChoosedMode=intent.getBooleanExtra(Constants.chosenMode,false);
+        mChosenMode = intent.getBooleanExtra(Constants.chosenMode, false);
 
         setUpMapIfNeeded();
 //        AddressFragment = (com.example.gio.autostop.User_Interface.fragments.AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
 //        AddressFragment.setMapsActivity(this);
-        mapFunctions=new MapFunctionsFragment();
+        mapFunctions = new MapFunctionsFragment();
         mapFunctions.setMapsActivity(this);
-        driverFragment=new DriverFragment();
+        driverFragment = new DriverFragment();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        if(!mChoosedMode)
-            ft.replace(R.id.placeholder,mapFunctions);
+        if (!mChosenMode)
+            ft.replace(R.id.placeholder, mapFunctions);
         else
-            ft.replace(R.id.placeholder,driverFragment);
+            ft.replace(R.id.placeholder, driverFragment);
         ft.commit();
         startedLocationUpdate = false;
         permissionRequestCounter = 0;
@@ -117,7 +122,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             startLocationUpdates();
     }
 
-
     @Override
     public void onConnected(Bundle bundle) {
         if (!startedLocationUpdate)
@@ -138,6 +142,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public void onConnectionSuspended(int i) {
         mGoogleApiClient.connect();
     }
+
 
     @Override
     protected void onStop() {
@@ -165,6 +170,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setOnMyLocationButtonClickListener(this);
+        mMap.setOnMapLongClickListener(this);
         enableMyLocation();
         DataRequestManager.getInstance().setUpMap(this, mapFunctions.callback);
 //        mapFunctions.setUpMap();
@@ -270,10 +276,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
             ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMapAsync(this);
-            if (mMap != null) {
-//                mapFunctions.setUpMap();
-                DataRequestManager.getInstance().setUpMap(this, mapFunctions.callback);
-            }
         }
     }
 
@@ -284,8 +286,20 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             if (savedInstanceState.keySet().contains(LOCATION_KEY))
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
         }
-
     }
 
-
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+        if ((MapFunctionsFragment.isMarkerForDeletionInitialized() && !mChosenMode)|| mChosenMode) {
+            if (markerForDeletionDestination != null)
+                markerForDeletionDestination.remove();
+            markerForDeletionDestination = mMap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .draggable(true)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
+            LatLng position = markerForDeletionDestination.getPosition();
+            MapFunctionsFragment.setMarkerForDeletionDestination(markerForDeletionDestination);
+            MapFunctionsFragment.uploadingPosition(position,mChosenMode);
+        }
+    }
 }
