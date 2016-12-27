@@ -7,13 +7,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Spinner;
-import android.widget.Toast;
 
 import com.example.gio.autostop.R;
 
 public class DriverFragment extends Fragment {
     private Spinner spinner;
+    public static boolean createdDriverFragment = false;
 
     public DriverFragment() {
         // Required empty public constructor
@@ -28,11 +29,12 @@ public class DriverFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        spinner=(Spinner)view.findViewById(R.id.spinner);
-        String[] items = new String[]{"1", "2", "3","4","5+"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),android.R.layout.simple_spinner_dropdown_item, items);
+
+        spinner = (Spinner) view.findViewById(R.id.spinner);
+        String[] items = new String[]{"1", "2", "3", "4", "5+"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_dropdown_item, items);
         spinner.setAdapter(adapter);
-        spinner.setOnItemSelectedListener(new  AdapterView.OnItemSelectedListener() {
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
             @Override
             public void onItemSelected(AdapterView<?> adapter, View v,
@@ -49,6 +51,7 @@ public class DriverFragment extends Fragment {
 
             }
         });
+        createdDriverFragment=true;
+    }
 
-}
 }

@@ -1,6 +1,7 @@
 package com.example.gio.autostop.User_Interface.activities;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,6 +12,7 @@ import android.location.Location;
 import com.example.gio.autostop.Constants;
 import com.example.gio.autostop.Server.DataRequestManager;
 import com.example.gio.autostop.R;
+import com.example.gio.autostop.Settings;
 import com.example.gio.autostop.User_Interface.fragments.DriverFragment;
 import com.example.gio.autostop.User_Interface.fragments.MapFunctionsFragment;
 import com.google.android.gms.location.LocationListener;
@@ -39,11 +41,11 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.Set;
 
 public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
         GoogleApiClient.ConnectionCallbacks, GoogleMap.OnMapLongClickListener {
-
 
     public final static int MILISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
@@ -96,7 +98,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            checkGps();
+            Settings.checkGps(this);
         }
 
         updateValuesFromBundle(savedInstanceState);
@@ -183,7 +185,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 if (grantResults.length == 1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     enableMyLocation();
-                    checkGps();
+                    Settings.checkGps(this);
                 } else {
                     Toast.makeText(MapsActivity.this, "Permission was blocked", Toast.LENGTH_SHORT).show();
                 }
@@ -193,7 +195,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     @Override
     public boolean onMyLocationButtonClick() {
-        checkGps();
+        Settings.checkGps(this);
         return false;
     }
 
@@ -223,12 +225,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     }
 
 
-    public void checkGps() {
-        final LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            buildAlertMessageNoGps();
-        }
-    }
 
     protected void stopLocationUpdates() {
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -251,24 +247,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     }
 
-
-    private void buildAlertMessageNoGps() {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
-                .setCancelable(false)
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
-                        startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-                    }
-                })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
-                        dialog.cancel();
-                    }
-                });
-        final AlertDialog alert = builder.create();
-        alert.show();
-    }
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.

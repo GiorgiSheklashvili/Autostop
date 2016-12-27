@@ -44,11 +44,12 @@ public class MapFunctionsFragment extends Fragment {
     public static LocationManager locationManager;
     private static MapsActivity mMapsActivity;
     private static Location location;
+    private Button unCheckDriver;
     private static LatLng newLatLng;
     private ArrayList<Marker> mMarkerCollection = new ArrayList<>();
     private Button mCheckInButton, mCheckOutButton;
     String myMac, deviceId;
-    static Boolean chosenMode1 =false;
+    static Boolean chosenMode1 = false;
 
     public static void setMarkerForDeletionDestination(Marker marker) {
         markerForDeletionDestination = marker;
@@ -76,30 +77,46 @@ public class MapFunctionsFragment extends Fragment {
         mCheckInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+            com.example.gio.autostop.Settings.checkGps(getContext());
+                final LocationManager manager = (LocationManager) App.getAppContext().getSystemService(Context.LOCATION_SERVICE);
+                if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
                 checkInCurrentPosition();
                 com.example.gio.autostop.Settings.saveBoolean("mCheckInButton", false);
                 com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", true);
                 mCheckInButton.setClickable(false);
                 mCheckOutButton.setClickable(true);
+                }
             }
         });
         mCheckOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                deletePosition();
-                markerForDeletion.remove();
-                markerForDeletion = null;
-                if(markerForDeletionDestination!=null)
-                markerForDeletionDestination.remove();
-                com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", false);
-                com.example.gio.autostop.Settings.saveBoolean("mCheckInButton", true);
-                mCheckOutButton.setClickable(false);
-                mCheckInButton.setClickable(true);
+                deleteMakers();
             }
         });
-
+        if(DriverFragment.createdDriverFragment){
+        unCheckDriver = (Button) view.findViewById(R.id.button4);
+        unCheckDriver.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                deleteMakers();
+            }
+        });
+        }
     }
 
+    private void deleteMakers(){
+        deletePosition();
+        markerForDeletion.remove();
+        markerForDeletion = null;
+        if (markerForDeletionDestination != null)
+            markerForDeletionDestination.remove();
+        com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", false);
+        com.example.gio.autostop.Settings.saveBoolean("mCheckInButton", true);
+        mCheckOutButton.setClickable(false);
+        mCheckInButton.setClickable(true);
+
+    }
 
     @Override
     public void onAttach(Context context) {
@@ -158,14 +175,14 @@ public class MapFunctionsFragment extends Fragment {
             location = locationNet;
         }
         newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-        if(!chosenMode1)
-        markerForDeletion = mMapsActivity.mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
+        if (!chosenMode1)
+            markerForDeletion = mMapsActivity.mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
     }
 
     public static void uploadingPosition(LatLng destinationPosition, Boolean chosenMode) {
-        chosenMode1=chosenMode;
-        if(chosenMode)
-        checkInCurrentPosition();
+        chosenMode1 = chosenMode;
+        if (chosenMode)
+            checkInCurrentPosition();
         com.example.gio.autostop.Settings.saveLong("Latitude", Double.doubleToLongBits(location.getLatitude()));
         com.example.gio.autostop.Settings.saveLong("Longitude", Double.doubleToLongBits(location.getLongitude()));
         String deviceId = Settings.Secure.getString(mMapsActivity.getContentResolver(), Settings.Secure.ANDROID_ID);
