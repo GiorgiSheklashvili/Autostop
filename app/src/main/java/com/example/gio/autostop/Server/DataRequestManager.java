@@ -47,7 +47,7 @@ public class DataRequestManager {
                             Double latitudeDestination = jsonObject.getDouble("latitudeDestination");
                             Double longitudeDestination = jsonObject.getDouble("longitudeDestination");
                             Boolean kindOfUser=jsonObject.getBoolean("kindOfUser");
-                            callback.onRequestedLoaded(latitude, longitude,mac,android_id);
+                            callback.onRequestedLoaded(latitude, longitude,mac,android_id,latitudeDestination,longitudeDestination,kindOfUser);
                         }
                     } else {
                         AlertDialog.Builder builder = new AlertDialog.Builder(activity);

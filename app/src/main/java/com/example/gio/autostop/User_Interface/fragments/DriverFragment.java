@@ -54,4 +54,9 @@ public class DriverFragment extends Fragment {
         createdDriverFragment=true;
     }
 
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        MapFunctionsFragment.chosenMode1=false;
+    }
 }
