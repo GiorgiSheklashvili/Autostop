@@ -5,11 +5,16 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.Location;
 import android.location.LocationManager;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.gson.Gson;
+
 
 
 public class Settings {
@@ -23,6 +28,7 @@ public class Settings {
     private static void commit(){
         editor.commit();
     }
+
     public static void saveBoolean(String key,Boolean value){
         editor.putBoolean(key,value);
         commit();
@@ -41,6 +47,7 @@ public class Settings {
         editor.putString(key,value);
         commit();
     }
+
 
     public static Long getLong(String key){
         return sharedPreferences.getLong(key,0);

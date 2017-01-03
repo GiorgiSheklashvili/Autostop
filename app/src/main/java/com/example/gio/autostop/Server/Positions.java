@@ -8,7 +8,7 @@ public class Positions {
     private String androidId;
     private double latitudeDestination;
     private double longitudeDestination;
-    private boolean kindOfUser;
+    private Boolean kindOfUser;
 
     public Positions(double lat, double longT, double latitudeDestination, double longitudeDestination, boolean kindOfUser, String mac, String androidId) {
         this.latitude = lat;
@@ -46,7 +46,7 @@ public class Positions {
         return longitudeDestination;
     }
 
-    public boolean getIsKindOfUser() {
+    public Boolean getIsKindOfUser() {
         return kindOfUser;
     }
 }

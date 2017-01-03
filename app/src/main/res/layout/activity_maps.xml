@@ -11,12 +11,6 @@
         android:layout_height="match_parent"
         tools:context="com.example.gio.autostop.User_Interface.activities.MapsActivity" />
 
-    <!--<fragment-->
-    <!--android:id="@+id/AddressFragment"-->
-    <!--android:name="com.example.gio.autostop.User_Interface.fragments.AddressFragment"-->
-    <!--class="com.example.gio.autostop.User_Interface.fragments.AddressFragment"-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="match_parent" />-->
     <fragment
         android:id="@+id/destinationFragment"
         android:name="com.example.gio.autostop.User_Interface.fragments.DestinationFragment"

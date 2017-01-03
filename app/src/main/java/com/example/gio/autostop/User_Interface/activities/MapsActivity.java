@@ -1,9 +1,6 @@
 package com.example.gio.autostop.User_Interface.activities;
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Geocoder;
@@ -17,14 +14,13 @@ import com.example.gio.autostop.User_Interface.fragments.DriverFragment;
 import com.example.gio.autostop.User_Interface.fragments.MapFunctionsFragment;
 import com.google.android.gms.location.LocationListener;
 
-import android.location.LocationManager;
 import android.os.Build;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -41,27 +37,26 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.text.DateFormat;
 import java.util.Date;
-import java.util.Set;
 
 public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
-        GoogleApiClient.ConnectionCallbacks, GoogleMap.OnMapLongClickListener {
+        GoogleApiClient.ConnectionCallbacks, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter {
 
-    public final static int MILISECONDS_PER_SECOND = 1000;
+    public final static int MILLISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
-    public final static int MINUTE = 60 * MILISECONDS_PER_SECOND;
+    public final static int MINUTE = 60 * MILLISECONDS_PER_SECOND;
     public int permissionRequestCounter;
     public GoogleApiClient mGoogleApiClient;
     public Boolean startedLocationUpdate;
     public LocationRequest locationRequest;
     public Marker markerForDeletionDestination;
     public Location mCurrentLocation;
-    //    public com.example.gio.autostop.User_Interface.fragments.AddressFragment AddressFragment;
+    public com.example.gio.autostop.User_Interface.fragments.AddressFragment AddressFragment;
     public MapFunctionsFragment mapFunctions;
     public DriverFragment driverFragment;
     public GoogleMap mMap;// Might be null if Google Play services APK is not available.
     private String mLastUpdateTime;
-    private boolean mChosenMode;
+    private Boolean mChosenMode;
     private final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     private final static String LOCATION_KEY = "location-key";
     private static final String TAG = "main-activity";
@@ -74,8 +69,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mChosenMode = intent.getBooleanExtra(Constants.chosenMode, false);
 
         setUpMapIfNeeded();
-//        AddressFragment = (com.example.gio.autostop.User_Interface.fragments.AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
-//        AddressFragment.setMapsActivity(this);
         mapFunctions = new MapFunctionsFragment();
         mapFunctions.setMapsActivity(this);
         driverFragment = new DriverFragment();
@@ -94,7 +87,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 .build();
         locationRequest = new LocationRequest();
         locationRequest.setInterval(MINUTE);
-        locationRequest.setFastestInterval(15 * MILISECONDS_PER_SECOND);
+        locationRequest.setFastestInterval(15 * MILLISECONDS_PER_SECOND);
         locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -119,7 +112,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     @Override
     protected void onResume() {
         super.onResume();
-        ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMapAsync(this);
+//        DataRequestManager.getInstance().setUpMap(this, mapFunctions.callback);
+//        ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMapAsync(this);
         if (mGoogleApiClient.isConnected() && !startedLocationUpdate)
             startLocationUpdates();
     }
@@ -134,9 +128,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 Toast.makeText(this, R.string.no_geocoder_available, Toast.LENGTH_SHORT).show();
                 return;
             }
-//            if (AddressFragment.AddressRequested) {
-//                AddressFragment.startIntentService();
-//            }
         }
     }
 
@@ -173,6 +164,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mMap = googleMap;
         mMap.setOnMyLocationButtonClickListener(this);
         mMap.setOnMapLongClickListener(this);
+        mMap.setOnMarkerClickListener(this);
+        mMap.setInfoWindowAdapter(this);
         enableMyLocation();
         DataRequestManager.getInstance().setUpMap(this, mapFunctions.callback);
 //        mapFunctions.setUpMap();
@@ -203,9 +196,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-//        AddressFragment.fetchAddressHandler();
     }
-
 
     public void enableMyLocation() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
@@ -223,7 +214,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
         }
     }
-
 
 
     protected void stopLocationUpdates() {
@@ -246,8 +236,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         }
 
     }
-
-
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
@@ -268,7 +256,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     @Override
     public void onMapLongClick(LatLng latLng) {
-        if ((MapFunctionsFragment.isMarkerForDeletionInitialized() && !mChosenMode)|| mChosenMode) {
+        if ((MapFunctionsFragment.isMarkerForDeletionInitialized() && !mChosenMode) || mChosenMode) {
             if (markerForDeletionDestination != null)
                 markerForDeletionDestination.remove();
             markerForDeletionDestination = mMap.addMarker(new MarkerOptions()
@@ -277,7 +265,34 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
             LatLng position = markerForDeletionDestination.getPosition();
             MapFunctionsFragment.setMarkerForDeletionDestination(markerForDeletionDestination);
-            MapFunctionsFragment.uploadingPosition(position,mChosenMode);
+            MapFunctionsFragment.uploadingPosition(position, mChosenMode);
+            com.example.gio.autostop.Settings.saveBoolean("mCheckOutForDriverButton", true);
+            if(mChosenMode)
+            DriverFragment.unCheckDriver.setClickable(true);
         }
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+
+        marker.showInfoWindow();
+        return true;
+    }
+
+    @Override
+    public View getInfoWindow(Marker marker) {
+        return null;
+    }
+
+    @Override
+    public View getInfoContents(Marker marker) {
+        View v = getLayoutInflater().inflate(R.layout.marker_text_layout, null);
+        AddressFragment = (com.example.gio.autostop.User_Interface.fragments.AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
+        AddressFragment.setMapsActivity(this);
+        if (AddressFragment.AddressRequested) {
+            AddressFragment.startIntentService();
+        }
+        AddressFragment.fetchAddressHandler();
+        return v;
     }
 }
