@@ -10,17 +10,22 @@ import com.example.gio.autostop.Constants;
 import com.example.gio.autostop.Server.DataRequestManager;
 import com.example.gio.autostop.R;
 import com.example.gio.autostop.Settings;
+import com.example.gio.autostop.User_Interface.fragments.AddressFragment;
 import com.example.gio.autostop.User_Interface.fragments.DriverFragment;
 import com.example.gio.autostop.User_Interface.fragments.MapFunctionsFragment;
+import com.example.gio.autostop.User_Interface.services.FetchAddressIntentService;
 import com.google.android.gms.location.LocationListener;
 
 import android.os.Build;
+import android.os.Handler;
+import android.os.ResultReceiver;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -51,15 +56,20 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public LocationRequest locationRequest;
     public Marker markerForDeletionDestination;
     public Location mCurrentLocation;
-    public com.example.gio.autostop.User_Interface.fragments.AddressFragment AddressFragment;
+    public AddressFragment AddressFragment;
     public MapFunctionsFragment mapFunctions;
     public DriverFragment driverFragment;
+    private TextView mLocationAddressTextView;
     public GoogleMap mMap;// Might be null if Google Play services APK is not available.
     private String mLastUpdateTime;
+    private String mAddressOutput;
     private Boolean mChosenMode;
+    View markerClickView;
+    private AddressResultReceiver mResultReceiver;
     private final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     private final static String LOCATION_KEY = "location-key";
     private static final String TAG = "main-activity";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,7 +103,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 == PackageManager.PERMISSION_GRANTED) {
             Settings.checkGps(this);
         }
-
+        mResultReceiver = new AddressResultReceiver(new Handler());
+        mAddressOutput = " ";
         updateValuesFromBundle(savedInstanceState);
 
     }
@@ -253,7 +264,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
         }
     }
-
     @Override
     public void onMapLongClick(LatLng latLng) {
         if ((MapFunctionsFragment.isMarkerForDeletionInitialized() && !mChosenMode) || mChosenMode) {
@@ -274,8 +284,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-
-        marker.showInfoWindow();
+//        if (mGoogleApiClient.isConnected() && mCurrentLocation != null) {
+//            startIntentService(marker); teqstis minichebamde xdeba panjris gamosvla
+//        }
+//        marker.showInfoWindow();
         return true;
     }
 
@@ -286,13 +298,35 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     @Override
     public View getInfoContents(Marker marker) {
-        View v = getLayoutInflater().inflate(R.layout.marker_text_layout, null);
-        AddressFragment = (com.example.gio.autostop.User_Interface.fragments.AddressFragment) getSupportFragmentManager().findFragmentById(R.id.AddressFragment);
-        AddressFragment.setMapsActivity(this);
-        if (AddressFragment.AddressRequested) {
-            AddressFragment.startIntentService();
+        markerClickView = getLayoutInflater().inflate(R.layout.marker_text_layout, null);
+
+        return markerClickView;
+    }
+    public void startIntentService(Marker marker) {
+        LatLng latLng=marker.getPosition();
+        Location loc = new Location("");
+        loc.setLatitude(latLng.latitude);
+        loc.setLongitude(latLng.longitude);
+        Intent intent = new Intent(this, FetchAddressIntentService.class);
+        intent.putExtra(Constants.RECEIVER, mResultReceiver);
+        intent.putExtra(Constants.LOCATION_DATA_EXTRA, loc);
+        startService(intent);
+
+    }
+    //Receiver for data sent from FetchAddressIntentService.
+    class AddressResultReceiver extends ResultReceiver {
+        private int CREATOR;
+
+        public AddressResultReceiver(Handler handler) {
+            super(handler);
         }
-        AddressFragment.fetchAddressHandler();
-        return v;
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            super.onReceiveResult(resultCode, resultData);
+            mAddressOutput = resultData.getString(Constants.RESULT_DATA_KEY);
+            mLocationAddressTextView = (TextView) markerClickView.findViewById(R.id.address1);
+            mLocationAddressTextView.setText(mAddressOutput);
+        }
     }
 }

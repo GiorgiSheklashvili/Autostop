@@ -24,6 +24,7 @@ public class Settings {
     public static void initialize(Context context){
         sharedPreferences= PreferenceManager.getDefaultSharedPreferences(context);
         editor=sharedPreferences.edit();
+        commit();
     }
     private static void commit(){
         editor.commit();

@@ -68,7 +68,7 @@ public class AddressFragment extends Fragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mProgressBar = (ProgressBar) view.findViewById(R.id.progress_bar);
-        mLocationAddressTextView = (TextView) view.findViewById(R.id.address);
+        mLocationAddressTextView = (TextView) view.findViewById(R.id.address1);
         updateUIWidgets();
     }
 
@@ -94,8 +94,6 @@ public class AddressFragment extends Fragment {
             updateUIWidgets();
             startIntentService();
         }
-
-
     }
 
     private void updateValuesFromBundle(Bundle savedInstanceState) {

@@ -47,7 +47,7 @@ public class MapFunctionsFragment extends Fragment {
     private static Location location;
     private static LatLng newLatLng;
     public static ArrayList<Marker> mMarkerCollection = new ArrayList<>();
-    private static Button mCheckInButton, mCheckOutButton;
+    public static Button mCheckInButton, mCheckOutButton;
     String myMac, deviceId;
     public static Boolean chosenMode1 = false;
     public static Context context;
@@ -75,7 +75,10 @@ public class MapFunctionsFragment extends Fragment {
         mCheckInButton = (Button) view.findViewById(R.id.button2);
         mCheckOutButton = (Button) view.findViewById(R.id.button3);
         mCheckOutButton.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckOutButton"));
-        mCheckInButton.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckInButton"));
+        if(mCheckOutButton.isClickable())
+            mCheckInButton.setClickable(false);
+        else
+            mCheckInButton.setClickable(true);
         mCheckInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -92,11 +95,11 @@ public class MapFunctionsFragment extends Fragment {
         mCheckOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                com.example.gio.autostop.Settings.saveBoolean("mCheckInButton", true);
                 com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", false);
                 mCheckOutButton.setClickable(false);
                 mCheckInButton.setClickable(true);
                 com.example.gio.autostop.Settings.saveBoolean("passengerIconAlreadyCreated",false);
+                com.example.gio.autostop.Settings.saveBoolean("mCheckOutForDriverButton", false);
                 deleteMarkers();
             }
         });
@@ -110,7 +113,6 @@ public class MapFunctionsFragment extends Fragment {
             markerForDeletionDestination.remove();
         if (!chosenMode1) {
             com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", false);
-            com.example.gio.autostop.Settings.saveBoolean("mCheckInButton", true);
         } else {
             com.example.gio.autostop.Settings.saveBoolean("mCheckOutForDriverButton", false);
             DriverFragment.unCheckDriver.setClickable(false);
@@ -137,7 +139,10 @@ public class MapFunctionsFragment extends Fragment {
     public void onResume() {
         super.onResume();
         mCheckOutButton.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckOutButton"));
-        mCheckInButton.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckInButton"));
+        if(mCheckOutButton.isClickable())
+            mCheckInButton.setClickable(false);
+        else
+            mCheckInButton.setClickable(true);
     }
 
     public static boolean isMarkerForDeletionInitialized() {
@@ -178,7 +183,7 @@ public class MapFunctionsFragment extends Fragment {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(App.getAppContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        locationManager = (LocationManager) App.getAppContext().getSystemService(Context.LOCATION_SERVICE);
+        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         Location locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         Location locationNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         long GPSLocationTime = 0;
@@ -213,10 +218,9 @@ public class MapFunctionsFragment extends Fragment {
 
     public static void uploadingPosition(LatLng destinationPosition, Boolean chosenMode) {
         if(!chosenMode){
-        com.example.gio.autostop.Settings.saveBoolean("mCheckInButton", false);
-        com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", true);
         com.example.gio.autostop.Settings.saveBoolean("passengerIconAlreadyCreated",true);
         }
+        com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", true);
         chosenMode1 = chosenMode;
         if (chosenMode)
             checkInCurrentPosition(App.getAppContext());
