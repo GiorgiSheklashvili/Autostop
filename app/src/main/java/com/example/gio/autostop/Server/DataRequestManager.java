@@ -15,19 +15,24 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by Gio on 11/19/2016.
  */
 
 public class DataRequestManager {
     private static DataRequestManager dataRequestManager;
+    public static List<Positions> positions = new ArrayList <>();
+    private static Positions tempPosition;
 
-    public static DataRequestManager getInstance(){
-        if(dataRequestManager== null) dataRequestManager = new DataRequestManager();
+    public static DataRequestManager getInstance() {
+        if (dataRequestManager == null) dataRequestManager = new DataRequestManager();
         return dataRequestManager;
     }
 
-    private DataRequestManager(){
+    private DataRequestManager() {
 
     }
 
@@ -49,9 +54,11 @@ public class DataRequestManager {
                             Double latitude = jsonObject.getDouble("latitude");
                             Double longitude = jsonObject.getDouble("longitude");
                             Double latitudeDestination = jsonObject.getDouble("latitudeDestination");
-                            Boolean kindOfUser=Boolean.valueOf(jsonObject.getString("kindOfUser"));
+                            Boolean kindOfUser = Boolean.valueOf(jsonObject.getString("kindOfUser"));
                             Double longitudeDestination = jsonObject.getDouble("longitudeDestination");
-                            callback.onRequestedLoaded(latitude, longitude,mac,android_id,latitudeDestination,longitudeDestination,kindOfUser);
+                            tempPosition = new Positions(latitude, longitude, latitudeDestination, longitudeDestination, kindOfUser, mac, android_id);
+                            positions.add(tempPosition);
+                            callback.onRequestedLoaded(latitude, longitude, mac, android_id, latitudeDestination, longitudeDestination, kindOfUser);
                         }
                     } else {
                         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
@@ -70,6 +77,14 @@ public class DataRequestManager {
         queue.add(downloadPosition);
     }
 
+    public static Positions searchList(Double latitude, Double longitude) {
+        for (int i = 0; i < positions.size(); i++) {
+            if (positions.get(i).getLatitude() == latitude && positions.get(i).getLongitude() == longitude)
+                return positions.get(i);
+        }
+        return null;
+
+    }
 
 //    public MapRequestRequestCallback getCallback() {
 //        return callback;

@@ -1,21 +1,26 @@
 package com.example.gio.autostop.User_Interface.activities;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Geocoder;
 import android.location.Location;
 
 import com.example.gio.autostop.Constants;
 import com.example.gio.autostop.Server.DataRequestManager;
 import com.example.gio.autostop.R;
+import com.example.gio.autostop.Server.Positions;
 import com.example.gio.autostop.Settings;
 import com.example.gio.autostop.User_Interface.fragments.AddressFragment;
 import com.example.gio.autostop.User_Interface.fragments.DriverFragment;
 import com.example.gio.autostop.User_Interface.fragments.MapFunctionsFragment;
 import com.example.gio.autostop.User_Interface.services.FetchAddressIntentService;
+import com.example.gio.autostop.User_Interface.services.JSONParser;
 import com.google.android.gms.location.LocationListener;
 
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.ResultReceiver;
@@ -39,9 +44,18 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.gson.JsonObject;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
@@ -247,6 +261,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         }
 
     }
+
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
@@ -264,6 +279,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
         }
     }
+
     @Override
     public void onMapLongClick(LatLng latLng) {
         if ((MapFunctionsFragment.isMarkerForDeletionInitialized() && !mChosenMode) || mChosenMode) {
@@ -277,8 +293,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             MapFunctionsFragment.setMarkerForDeletionDestination(markerForDeletionDestination);
             MapFunctionsFragment.uploadingPosition(position, mChosenMode);
             com.example.gio.autostop.Settings.saveBoolean("mCheckOutForDriverButton", true);
-            if(mChosenMode)
-            DriverFragment.unCheckDriver.setClickable(true);
+            if (mChosenMode)
+                DriverFragment.unCheckDriver.setClickable(true);
         }
     }
 
@@ -288,6 +304,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 //            startIntentService(marker); teqstis minichebamde xdeba panjris gamosvla
 //        }
 //        marker.showInfoWindow();
+        LatLng latLng = marker.getPosition();
+        Positions position=DataRequestManager.searchList(latLng.latitude,latLng.longitude);
+        String url= makeURL(position.getLatitude(),position.getLongitude(),position.getLatitudeDestination(),position.getLongitudeDestination());
+        new connectAsyncTask(url).execute();
         return true;
     }
 
@@ -302,8 +322,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
         return markerClickView;
     }
+
     public void startIntentService(Marker marker) {
-        LatLng latLng=marker.getPosition();
+        LatLng latLng = marker.getPosition();
         Location loc = new Location("");
         loc.setLatitude(latLng.latitude);
         loc.setLongitude(latLng.longitude);
@@ -313,6 +334,87 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         startService(intent);
 
     }
+
+    public String makeURL(double sourceLat, double sourceLog, double destLat, double destLog) {
+        StringBuilder urlString = new StringBuilder();
+        urlString.append("https://maps.googleapis.com/maps/api/directions/json");
+        urlString.append("?origin=");
+        urlString.append(Double.toString(sourceLat));
+        urlString.append(",");
+        urlString.append(Double.toString(sourceLog));
+        urlString.append("&destination=");// to
+        urlString.append(Double.toString(destLat));
+        urlString.append(",");
+        urlString.append(Double.toString(destLog));
+        urlString.append("&sensor=false&mode=driving&alternatives=true");
+        urlString.append("&key=AIzaSyDRHhjUg53FwxJqYtCjVs_uGl88ajCSUeo");
+        return urlString.toString();
+    }
+
+    public void drawPath(String result) {
+        try {
+            //Tranform the string into a json object
+            final JSONObject json = new JSONObject(result);
+            JSONArray routeArray = json.getJSONArray("routes");
+            JSONObject routes = routeArray.getJSONObject(0);
+            JSONObject overviewPolylines = routes.getJSONObject("overview_polyline");
+            String encodedString = overviewPolylines.getString("points");
+            List<LatLng> list = decodePoly(encodedString);
+            Polyline line = mMap.addPolyline(new PolylineOptions()
+                    .addAll(list)
+                    .width(12)
+                    .color(Color.parseColor("#05b1fb"))//Google maps blue color
+                    .geodesic(true)
+            );
+           /*
+           for(int z = 0; z<list.size()-1;z++){
+                LatLng src= list.get(z);
+                LatLng dest= list.get(z+1);
+                Polyline line = mMap.addPolyline(new PolylineOptions()
+                .add(new LatLng(src.latitude, src.longitude), new LatLng(dest.latitude,   dest.longitude))
+                .width(2)
+                .color(Color.BLUE).geodesic(true));
+            }
+           */
+        } catch (JSONException e) {
+
+        }
+    }
+
+    private List<LatLng> decodePoly(String encoded) {
+
+        List<LatLng> poly = new ArrayList<LatLng>();
+        int index = 0, len = encoded.length();
+        int lat = 0, lng = 0;
+
+        while (index < len) {
+            int b, shift = 0, result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            LatLng p = new LatLng((((double) lat / 1E5)),
+                    (((double) lng / 1E5)));
+            poly.add(p);
+        }
+
+        return poly;
+    }
+
     //Receiver for data sent from FetchAddressIntentService.
     class AddressResultReceiver extends ResultReceiver {
         private int CREATOR;
@@ -327,6 +429,35 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             mAddressOutput = resultData.getString(Constants.RESULT_DATA_KEY);
             mLocationAddressTextView = (TextView) markerClickView.findViewById(R.id.address1);
             mLocationAddressTextView.setText(mAddressOutput);
+        }
+    }
+    private class connectAsyncTask extends AsyncTask<Void, Void, String> {
+        private ProgressDialog progressDialog;
+        String url;
+        connectAsyncTask(String urlPass){
+            url = urlPass;
+        }
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(MapsActivity.this);
+            progressDialog.setMessage("Fetching route, Please wait...");
+            progressDialog.setIndeterminate(true);
+            progressDialog.show();
+        }
+        @Override
+        protected String doInBackground(Void... params) {
+            JSONParser jParser = new JSONParser();
+            String json = jParser.getJSONFromUrl(url);
+            return json;
+        }
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            progressDialog.hide();
+            if(result!=null){
+                drawPath(result);
+            }
         }
     }
 }

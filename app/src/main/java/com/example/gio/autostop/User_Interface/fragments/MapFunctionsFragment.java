@@ -132,7 +132,6 @@ public class MapFunctionsFragment extends Fragment {
 
     public void setMapsActivity(MapsActivity mMapsActivity) {
         this.mMapsActivity = mMapsActivity;
-
     }
 
     @Override
