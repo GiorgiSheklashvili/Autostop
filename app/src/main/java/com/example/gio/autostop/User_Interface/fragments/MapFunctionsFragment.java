@@ -51,6 +51,7 @@ public class MapFunctionsFragment extends Fragment {
     String myMac, deviceId;
     public static Boolean chosenMode1 = false;
     public static Context context;
+    public static Positions position;
 
     public static void setMarkerForDeletionDestination(Marker marker) {
         markerForDeletionDestination = marker;
@@ -227,7 +228,7 @@ public class MapFunctionsFragment extends Fragment {
             newLatLng = new LatLng(com.example.gio.autostop.Settings.getLong("Latitude"), com.example.gio.autostop.Settings.getLong("Longitude"));
         }
             String deviceId = Settings.Secure.getString(mMapsActivity.getContentResolver(), Settings.Secure.ANDROID_ID);
-        Positions position = new Positions(newLatLng.latitude, newLatLng.longitude, destinationPosition.latitude, destinationPosition.longitude, chosenMode, getWifiMacAddress(), deviceId);
+        position = new Positions(newLatLng.latitude, newLatLng.longitude, destinationPosition.latitude, destinationPosition.longitude, chosenMode, getWifiMacAddress(), deviceId);
         Response.Listener<String> responseListener = new Response.Listener<String>() {
             @Override
             public void onResponse(String s) {

@@ -46,7 +46,6 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.gson.JsonObject;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -59,7 +58,7 @@ import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
-        GoogleApiClient.ConnectionCallbacks, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter {
+        GoogleApiClient.ConnectionCallbacks, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter,GoogleMap.OnMapClickListener {
 
     public final static int MILLISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
@@ -78,7 +77,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     private String mLastUpdateTime;
     private String mAddressOutput;
     private Boolean mChosenMode;
-    View markerClickView;
+    private View markerClickView;
+    private List<Polyline> polyLines = new ArrayList<Polyline>();
+    Polyline tempPolyline;
+    private String url;
+    private List<Marker> markerList = new ArrayList<Marker>();
     private AddressResultReceiver mResultReceiver;
     private final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     private final static String LOCATION_KEY = "location-key";
@@ -191,6 +194,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         mMap.setOnMapLongClickListener(this);
         mMap.setOnMarkerClickListener(this);
         mMap.setInfoWindowAdapter(this);
+        mMap.setOnMapClickListener(this);
         enableMyLocation();
         DataRequestManager.getInstance().setUpMap(this, mapFunctions.callback);
 //        mapFunctions.setUpMap();
@@ -304,10 +308,22 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 //            startIntentService(marker); teqstis minichebamde xdeba panjris gamosvla
 //        }
 //        marker.showInfoWindow();
-        LatLng latLng = marker.getPosition();
-        Positions position=DataRequestManager.searchList(latLng.latitude,latLng.longitude);
-        String url= makeURL(position.getLatitude(),position.getLongitude(),position.getLatitudeDestination(),position.getLongitudeDestination());
-        new connectAsyncTask(url).execute();
+
+        if (markerList.contains(marker)) {
+            tempPolyline = (Polyline) marker.getTag();
+            tempPolyline.remove();
+            markerList.remove(markerList.indexOf(marker));
+        } else {
+            if(MapFunctionsFragment.position!=null){
+            LatLng latLng = marker.getPosition();
+            Positions position = DataRequestManager.searchList(latLng.latitude, latLng.longitude);
+            if (position != null)
+                url = makeURL(position.getLatitude(), position.getLongitude(), position.getLatitudeDestination(), position.getLongitudeDestination());
+            else
+                url = makeURL(MapFunctionsFragment.position.getLatitude(), MapFunctionsFragment.position.getLongitude(), MapFunctionsFragment.position.getLatitudeDestination(), MapFunctionsFragment.position.getLongitudeDestination());
+            new connectAsyncTask(url, marker).execute();
+            }
+        }
         return true;
     }
 
@@ -351,7 +367,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         return urlString.toString();
     }
 
-    public void drawPath(String result) {
+    public void drawPath(String result, Marker marker) {
         try {
             //Tranform the string into a json object
             final JSONObject json = new JSONObject(result);
@@ -366,6 +382,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                     .color(Color.parseColor("#05b1fb"))//Google maps blue color
                     .geodesic(true)
             );
+            marker.setTag(line);
+            markerList.add(marker);
+            polyLines.add(line);
            /*
            for(int z = 0; z<list.size()-1;z++){
                 LatLng src= list.get(z);
@@ -415,6 +434,16 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         return poly;
     }
 
+    @Override
+    public void onMapClick(LatLng latLng) {
+        for(Polyline line1 : polyLines)
+        {
+            line1.remove();
+        }
+
+        polyLines.clear();
+    }
+
     //Receiver for data sent from FetchAddressIntentService.
     class AddressResultReceiver extends ResultReceiver {
         private int CREATOR;
@@ -431,12 +460,17 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             mLocationAddressTextView.setText(mAddressOutput);
         }
     }
+
     private class connectAsyncTask extends AsyncTask<Void, Void, String> {
         private ProgressDialog progressDialog;
         String url;
-        connectAsyncTask(String urlPass){
-            url = urlPass;
+        Marker marker;
+
+        connectAsyncTask(String urlPass, Marker marker) {
+            this.marker = marker;
+            this.url = urlPass;
         }
+
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -445,18 +479,20 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             progressDialog.setIndeterminate(true);
             progressDialog.show();
         }
+
         @Override
         protected String doInBackground(Void... params) {
             JSONParser jParser = new JSONParser();
             String json = jParser.getJSONFromUrl(url);
             return json;
         }
+
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
             progressDialog.hide();
-            if(result!=null){
-                drawPath(result);
+            if (result != null) {
+                drawPath(result, marker);
             }
         }
     }
