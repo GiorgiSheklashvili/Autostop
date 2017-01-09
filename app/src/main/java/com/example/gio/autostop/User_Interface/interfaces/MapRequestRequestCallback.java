@@ -1,8 +1,6 @@
-package com.example.gio.autostop.Server;
+package com.example.gio.autostop.User_Interface.interfaces;
 
-/**
- * Created by Gio on 11/19/2016.
- */
+
 
 public abstract class MapRequestRequestCallback {
 

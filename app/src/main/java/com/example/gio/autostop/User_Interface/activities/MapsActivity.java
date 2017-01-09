@@ -55,10 +55,12 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
-        GoogleApiClient.ConnectionCallbacks, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter,GoogleMap.OnMapClickListener {
+        GoogleApiClient.ConnectionCallbacks, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter,GoogleMap.OnMapClickListener
+{
 
     public final static int MILLISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
@@ -112,6 +114,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+        MapFunctionsFragment.setGoogleApiClient(mGoogleApiClient);
         locationRequest = new LocationRequest();
         locationRequest.setInterval(MINUTE);
         locationRequest.setFastestInterval(15 * MILLISECONDS_PER_SECOND);

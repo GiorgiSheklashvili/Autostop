@@ -16,13 +16,13 @@
         android:gravity="bottom"
         android:orientation="horizontal"
         tools:context="com.example.gio.autostop.User_Interface.fragments.DriverFragment">
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:layout_weight="4"
-            android:text="@string/seats"
-            android:textSize="20sp" />
+        <!--<TextView-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_marginBottom="10dp"-->
+            <!--android:layout_weight="4"-->
+            <!--android:text="@string/seats"-->
+            <!--android:textSize="20sp" />-->
         <Spinner
             android:id="@+id/spinner"
             android:layout_width="0dp"

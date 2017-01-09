@@ -6,10 +6,7 @@ import android.support.v7.app.AlertDialog;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.toolbox.Volley;
-import com.example.gio.autostop.User_Interface.fragments.MapFunctionsFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.example.gio.autostop.User_Interface.interfaces.MapRequestRequestCallback;
 
 import org.json.JSONArray;
 import org.json.JSONException;
