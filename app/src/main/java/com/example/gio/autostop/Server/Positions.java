@@ -1,4 +1,4 @@
-package com.example.gio.autostop.Server;
+package com.example.gio.autostop.server;
 
 
 public class Positions {

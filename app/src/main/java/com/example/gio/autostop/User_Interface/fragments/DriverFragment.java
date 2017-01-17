@@ -1,4 +1,4 @@
-package com.example.gio.autostop.User_Interface.fragments;
+package com.example.gio.autostop.user_interface.fragments;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Spinner;
 
+import com.example.gio.autostop.AutostopSettings;
 import com.example.gio.autostop.R;
 
 
@@ -23,7 +24,6 @@ public class DriverFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
         return inflater.inflate(R.layout.fragment_driver, container, false);
     }
 
@@ -31,14 +31,15 @@ public class DriverFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         unCheckDriver = (Button) view.findViewById(R.id.button4);
-        unCheckDriver.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckOutForDriverButton"));
+        unCheckDriver.setClickable(AutostopSettings.getBoolean("mCheckOutForDriverButton"));
         unCheckDriver.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                com.example.gio.autostop.Settings.saveBoolean("mCheckOutForDriverButton", false);
+                AutostopSettings.saveBoolean("mCheckOutForDriverButton", false);
+                AutostopSettings.saveBoolean("mCheckOutButton", false);
                 unCheckDriver.setClickable(false);
                 MapFunctionsFragment.deleteMarkers();
-                com.example.gio.autostop.Settings.saveBoolean("carIconAlreadyCreated",false);
+                AutostopSettings.saveBoolean("carIconAlreadyCreated",false);
             }
         });
 
@@ -76,6 +77,6 @@ public class DriverFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        unCheckDriver.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckOutForDriverButton"));
+        unCheckDriver.setClickable(AutostopSettings.getBoolean("mCheckOutForDriverButton"));
     }
 }

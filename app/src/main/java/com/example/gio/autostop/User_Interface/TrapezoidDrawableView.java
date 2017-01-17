@@ -1,4 +1,4 @@
-package com.example.gio.autostop.User_Interface;
+package com.example.gio.autostop.user_interface;
 
 import android.content.Context;
 import android.graphics.Canvas;

@@ -1,7 +1,10 @@
-package com.example.gio.autostop.User_Interface.activities;
+package com.example.gio.autostop.user_interface.activities;
 
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
@@ -15,10 +18,12 @@ import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.gio.autostop.Constants;
-import com.example.gio.autostop.User_Interface.OnSwipeTouchListener;
+import com.example.gio.autostop.user_interface.OnSwipeTouchListener;
 import com.example.gio.autostop.R;
+
 
 
 public class MainActivity extends AppCompatActivity {
@@ -41,7 +46,10 @@ public class MainActivity extends AppCompatActivity {
         goImageView.setOnClickListener(new View.OnClickListener() {
                                            @Override
                                            public void onClick(View v) {
+                                               if(checkIfInternetIsAvailable(v.getContext()))
                                                displayMap(choose);
+                                               else
+                                                   Toast.makeText(v.getContext(),"No Internet",Toast.LENGTH_LONG).show();
                                            }
                                        }
         );
@@ -88,7 +96,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+    public boolean checkIfInternetIsAvailable(Context context){
+        ConnectivityManager cm =
+                (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+        return isConnected;
+    }
     public void displayMap(boolean choose) {
         Intent intent = new Intent(this, MapsActivity.class);
         intent.putExtra(Constants.chosenMode, choose);

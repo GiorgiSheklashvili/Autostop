@@ -17,7 +17,7 @@ import com.google.gson.Gson;
 
 
 
-public class Settings {
+public class AutostopSettings {
     private static SharedPreferences sharedPreferences;
     private static SharedPreferences.Editor editor;
 

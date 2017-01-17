@@ -2,12 +2,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".User_Interface.fragments.MapFunctionsFragment"
+    tools:context=".user_interface.fragments.MapFunctionsFragment"
     android:background="@android:color/transparent"
     >
 
     <Button
         android:id="@+id/button2"
+        android:layout_marginStart="@dimen/button_margin_left"
+        android:layout_marginBottom="@dimen/button_margin_bottom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/check_in"
@@ -15,6 +17,8 @@
         android:clickable="false" />
     <Button
         android:id="@+id/button3"
+        android:layout_marginRight="@dimen/button_margin_right"
+        android:layout_marginBottom="@dimen/button_margin_bottom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/UnCheck"

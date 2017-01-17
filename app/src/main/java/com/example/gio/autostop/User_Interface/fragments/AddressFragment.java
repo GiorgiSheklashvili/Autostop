@@ -1,4 +1,4 @@
-package com.example.gio.autostop.User_Interface.fragments;
+package com.example.gio.autostop.user_interface.fragments;
 
 import android.content.Context;
 import android.content.Intent;
@@ -14,9 +14,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.gio.autostop.Constants;
-import com.example.gio.autostop.User_Interface.services.FetchAddressIntentService;
+import com.example.gio.autostop.user_interface.services.FetchAddressIntentService;
 import com.example.gio.autostop.R;
-import com.example.gio.autostop.User_Interface.activities.MapsActivity;
+import com.example.gio.autostop.user_interface.activities.MapsActivity;
 
 
 public class AddressFragment extends Fragment {

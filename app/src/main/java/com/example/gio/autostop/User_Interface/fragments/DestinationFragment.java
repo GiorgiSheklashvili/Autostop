@@ -1,4 +1,4 @@
-package com.example.gio.autostop.User_Interface.fragments;
+package com.example.gio.autostop.user_interface.fragments;
 
 
 import android.content.DialogInterface;
@@ -11,7 +11,7 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 
 import com.example.gio.autostop.R;
-import com.example.gio.autostop.Settings;
+import com.example.gio.autostop.AutostopSettings;
 
 public class DestinationFragment extends Fragment {
     public static final String PREFS_NAME = "DoNotAskAgain";
@@ -43,11 +43,11 @@ public class DestinationFragment extends Fragment {
             public void onClick(DialogInterface dialog, int id) {
                 String checkBoxResult = "NOT checked";
                 if (doNotShowAgain.isChecked()) checkBoxResult = "checked";
-                Settings.saveString("skipMessage", checkBoxResult);
+                AutostopSettings.saveString("skipMessage", checkBoxResult);
                 dialog.cancel();
             }
         });
-        String skipMessage = Settings.getString("skipMessage");
+        String skipMessage = AutostopSettings.getString("skipMessage");
         AlertDialog dialog = builder.create();
         dialog.setCancelable(false);//prevent to get dismissed with back key
         dialog.setCanceledOnTouchOutside(false);//prevent to get dismissed on outside click

@@ -1,17 +1,15 @@
-package com.example.gio.autostop.User_Interface.fragments;
+package com.example.gio.autostop.user_interface.fragments;
 
 import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.nfc.tech.NfcBarcode;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -27,16 +25,16 @@ import java.math.RoundingMode;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.toolbox.Volley;
-import com.example.gio.autostop.App;
+import com.example.gio.autostop.AutostopSettings;
 import com.example.gio.autostop.Constants;
-import com.example.gio.autostop.Server.DeletePosition;
-import com.example.gio.autostop.User_Interface.GPSManager;
-import com.example.gio.autostop.User_Interface.interfaces.GPSCallback;
-import com.example.gio.autostop.User_Interface.interfaces.MapRequestRequestCallback;
-import com.example.gio.autostop.Server.Positions;
+import com.example.gio.autostop.server.DeletePosition;
+import com.example.gio.autostop.user_interface.GPSManager;
+import com.example.gio.autostop.user_interface.interfaces.GPSCallback;
+import com.example.gio.autostop.user_interface.interfaces.MapRequestRequestCallback;
+import com.example.gio.autostop.server.Positions;
 import com.example.gio.autostop.R;
-import com.example.gio.autostop.Server.UploadPosition;
-import com.example.gio.autostop.User_Interface.activities.MapsActivity;
+import com.example.gio.autostop.server.UploadPosition;
+import com.example.gio.autostop.user_interface.activities.MapsActivity;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -50,11 +48,12 @@ import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 public class MapFunctionsFragment extends Fragment {
     public static Marker markerForDeletion, markerForDeletionDestination, markerVariable;
     public static LocationManager locationManager;
     private static MapsActivity mMapsActivity;
+    private static AlertDialog alert;
+    private static AlertDialog.Builder builder;
     private static Location location;
     private static LatLng newLatLng;
     private static GPSManager gpsManager = null;
@@ -63,10 +62,10 @@ public class MapFunctionsFragment extends Fragment {
     private static LatLng tempDestinationPosition, tempLatLng;
     private static Double lastSpeed = 0.0;
     public static ArrayList<Marker> mMarkerCollection = new ArrayList<>();
-    public static Button mCheckInButton, mCheckOutButton;
+    public Button mCheckInButton, mCheckOutButton;
     String myMac, deviceId;
     public static Boolean chosenMode1 = false;
-    public static Context context;
+    public  static Context context;
     public static Positions position;
     public static GoogleApiClient googleApiClient1;
 
@@ -91,7 +90,15 @@ public class MapFunctionsFragment extends Fragment {
 
     @Override
     public void onDestroy() {
-        gpsManagerRemove(gpsManager);
+        if (googleApiClient1.isConnected())
+            gpsManagerRemove(gpsManager);
+        if(alert!=null)
+        {
+            alert.dismiss();
+            alert=null;
+        }
+
+
         super.onDestroy();
     }
 
@@ -107,10 +114,11 @@ public class MapFunctionsFragment extends Fragment {
     @Override
     public void onViewCreated(final View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        context = view.getContext();
+        if (markerForDeletion == null)
+            AutostopSettings.saveBoolean("carIconAlreadyCreated", false);
         mCheckInButton = (Button) view.findViewById(R.id.button2);
         mCheckOutButton = (Button) view.findViewById(R.id.button3);
-        mCheckOutButton.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckOutButton"));
+        mCheckOutButton.setClickable(AutostopSettings.getBoolean("mCheckOutButton"));
         if (mCheckOutButton.isClickable())
             mCheckInButton.setClickable(false);
         else
@@ -118,11 +126,10 @@ public class MapFunctionsFragment extends Fragment {
         mCheckInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                com.example.gio.autostop.Settings.checkGps(getContext());
-                final LocationManager manager = (LocationManager) App.getAppContext().getSystemService(Context.LOCATION_SERVICE);
+                AutostopSettings.checkGps(getContext());
+                final LocationManager manager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
                 if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                    context = view.getContext();
-                    checkInCurrentPosition(view.getContext());
+                    checkInCurrentPosition(context);
                     mCheckOutButton.setClickable(true);
                     mCheckInButton.setClickable(false);
                 }
@@ -131,11 +138,11 @@ public class MapFunctionsFragment extends Fragment {
         mCheckOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", false);
                 mCheckOutButton.setClickable(false);
                 mCheckInButton.setClickable(true);
-                com.example.gio.autostop.Settings.saveBoolean("passengerIconAlreadyCreated", false);
-                com.example.gio.autostop.Settings.saveBoolean("mCheckOutForDriverButton", false);
+                AutostopSettings.saveBoolean("mCheckOutButton", false);
+                AutostopSettings.saveBoolean("passengerIconAlreadyCreated", false);
+                AutostopSettings.saveBoolean("mCheckOutForDriverButton", false);
                 deleteMarkers();
                 gpsManagerRemove(gpsManager);
             }
@@ -149,9 +156,9 @@ public class MapFunctionsFragment extends Fragment {
         if (markerForDeletionDestination != null)
             markerForDeletionDestination.remove();
         if (!chosenMode1) {
-            com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", false);
+            AutostopSettings.saveBoolean("mCheckOutButton", false);
         } else {
-            com.example.gio.autostop.Settings.saveBoolean("mCheckOutForDriverButton", false);
+            AutostopSettings.saveBoolean("mCheckOutForDriverButton", false);
             DriverFragment.unCheckDriver.setClickable(false);
         }
 
@@ -160,6 +167,7 @@ public class MapFunctionsFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+        MapFunctionsFragment.context=context;
     }
 
     @Override
@@ -174,7 +182,7 @@ public class MapFunctionsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        mCheckOutButton.setClickable(com.example.gio.autostop.Settings.getBoolean("mCheckOutButton"));
+        mCheckOutButton.setClickable(AutostopSettings.getBoolean("mCheckOutButton"));
         if (mCheckOutButton.isClickable())
             mCheckInButton.setClickable(false);
         else
@@ -194,15 +202,16 @@ public class MapFunctionsFragment extends Fragment {
                 if (myMac.equals(mac) && deviceId.equals(android_id)) {
                     markerForDeletion = mMapsActivity.mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)));
                     if (!kindOfUser) {
+
                         markerForDeletion.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.passenger));
-                        com.example.gio.autostop.Settings.saveBoolean("passengerIconAlreadyCreated", true);
+                        AutostopSettings.saveBoolean("passengerIconAlreadyCreated", true);
                     } else {
                         markerForDeletion.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.car));
-                        com.example.gio.autostop.Settings.saveBoolean("carIconAlreadyCreated", true);
+                        AutostopSettings.saveBoolean("carIconAlreadyCreated", true);
                     }
                     mMarkerCollection.add(markerForDeletion);
-                    com.example.gio.autostop.Settings.saveLong("Latitude", Double.doubleToLongBits(lat));
-                    com.example.gio.autostop.Settings.saveLong("Longitude", Double.doubleToLongBits(lon));
+                    AutostopSettings.saveLong("Latitude", Double.doubleToLongBits(lat));
+                    AutostopSettings.saveLong("Longitude", Double.doubleToLongBits(lon));
                     tempLatLng = new LatLng(latitudeDestination, longitudeDestination);
                     gpsManagerStart(tempLatLng, kindOfUser);
                 } else {
@@ -216,8 +225,9 @@ public class MapFunctionsFragment extends Fragment {
         }
     };
 
+
     public static void checkInCurrentPosition(Context context) {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(App.getAppContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
@@ -241,16 +251,16 @@ public class MapFunctionsFragment extends Fragment {
             location = getLastKnownLocation(context);
         newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
         if (!chosenMode1) {
-            if (!com.example.gio.autostop.Settings.getBoolean("passengerIconAlreadyCreated")) {
+            if (!AutostopSettings.getBoolean("passengerIconAlreadyCreated")) {
                 markerForDeletion = mMapsActivity.mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
                 markerForDeletion.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.passenger));
-                com.example.gio.autostop.Settings.saveBoolean("passengerIconAlreadyCreated", false);
+                AutostopSettings.saveBoolean("passengerIconAlreadyCreated", false);
             }
         } else {
-            if (!com.example.gio.autostop.Settings.getBoolean("carIconAlreadyCreated")) {
+            if (!AutostopSettings.getBoolean("carIconAlreadyCreated")) {
                 markerForDeletion = mMapsActivity.mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
                 markerForDeletion.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.car));
-                com.example.gio.autostop.Settings.saveBoolean("carIconAlreadyCreated", false);
+                AutostopSettings.saveBoolean("carIconAlreadyCreated", false);
             }
         }
     }
@@ -274,18 +284,17 @@ public class MapFunctionsFragment extends Fragment {
         }
         return bestLocation;
     }
-
     public static void uploadingPosition(LatLng destinationPosition, final Boolean chosenMode) {
-
         if (!chosenMode) {
-            com.example.gio.autostop.Settings.saveBoolean("passengerIconAlreadyCreated", true);
+            AutostopSettings.saveBoolean("passengerIconAlreadyCreated", true);
         }
-        com.example.gio.autostop.Settings.saveBoolean("mCheckOutButton", true);
+        AutostopSettings.saveBoolean("mCheckOutButton", true);
+        AutostopSettings.saveBoolean("mCheckOutForDriverButton", true);
         chosenMode1 = chosenMode;
         if (chosenMode)
-            checkInCurrentPosition(App.getAppContext());
+            checkInCurrentPosition(context);
         if (location == null) {
-            newLatLng = new LatLng(com.example.gio.autostop.Settings.getLong("Latitude"), com.example.gio.autostop.Settings.getLong("Longitude"));
+            newLatLng = new LatLng(AutostopSettings.getLong("Latitude"), AutostopSettings.getLong("Longitude"));
         }
         String deviceId = Settings.Secure.getString(mMapsActivity.getContentResolver(), Settings.Secure.ANDROID_ID);
         position = new Positions(newLatLng.latitude, newLatLng.longitude, destinationPosition.latitude, destinationPosition.longitude, chosenMode, getWifiMacAddress(), deviceId);
@@ -296,7 +305,7 @@ public class MapFunctionsFragment extends Fragment {
                     JSONObject jsonResponse = new JSONObject(s);
                     boolean success = jsonResponse.getBoolean("success");
                     if (!success) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(App.getAppContext());
+                        builder = new AlertDialog.Builder(context);
                         builder.setMessage("uploading position failed")
                                 .setNegativeButton("retry", null)
                                 .create()
@@ -309,15 +318,13 @@ public class MapFunctionsFragment extends Fragment {
             }
         };
         UploadPosition upload = new UploadPosition(position, responseListener);
-        RequestQueue queue = Volley.newRequestQueue(App.getAppContext());
+        RequestQueue queue = Volley.newRequestQueue(context);
         queue.add(upload);
         gpsManagerStart(destinationPosition, chosenMode);
-
     }
-
     public static void gpsManagerStart(LatLng destinationPosition, final Boolean chosenMode) {
         gpsManager = new GPSManager();
-        gpsManager.startListening(App.getAppContext(),googleApiClient1);
+        gpsManager.startListening(context, googleApiClient1);
         tempDestinationPosition = destinationPosition;
         gpsManager.setGPSCallback(new GPSCallback() {
             @Override
@@ -332,14 +339,14 @@ public class MapFunctionsFragment extends Fragment {
                         lastSpeed = speedDouble;
                         checkInCurrentPosition(context);
                         uploadingPosition(tempDestinationPosition, true);
-                Toast.makeText(context, "driver " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, "driver " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
                     }
                     Toast.makeText(context, "mgzavri manqanashi " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
 
                 } else {//pexit mgzavroba
-                    if(lastSpeed>0.0){
-                    checkInReminderAlertMessage(context);
-                    Toast.makeText(context, "pexit  " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
+                    if (lastSpeed > 0.0) {
+                        checkInReminderAlertMessage(context);
+                        Toast.makeText(context, "pexit  " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
                     }
                 }
 
@@ -357,7 +364,7 @@ public class MapFunctionsFragment extends Fragment {
                         dialog.cancel();
                     }
                 });
-        final AlertDialog alert = builder.create();
+        alert = builder.create();
         alert.show();
         lastSpeed = 0.0;
     }
@@ -396,7 +403,7 @@ public class MapFunctionsFragment extends Fragment {
                     JSONObject jsonResponse = new JSONObject(s);
                     boolean success = jsonResponse.getBoolean("success");
                     if (!success) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(App.getAppContext());
+                        AlertDialog.Builder builder = new AlertDialog.Builder(context);
                         builder.setMessage("deleting position failed")
                                 .setNegativeButton("retry", null)
                                 .create()
@@ -408,7 +415,7 @@ public class MapFunctionsFragment extends Fragment {
             }
         };
         DeletePosition delete = new DeletePosition(mac, deviceId, responseListener);
-        RequestQueue queue = Volley.newRequestQueue(App.getAppContext());
+        RequestQueue queue = Volley.newRequestQueue(context);
         queue.add(delete);
     }
 

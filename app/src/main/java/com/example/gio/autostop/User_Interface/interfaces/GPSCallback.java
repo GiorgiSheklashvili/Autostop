@@ -1,4 +1,4 @@
-package com.example.gio.autostop.User_Interface.interfaces;
+package com.example.gio.autostop.user_interface.interfaces;
 
 import android.location.Location;
 

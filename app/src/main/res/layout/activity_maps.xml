@@ -9,12 +9,12 @@
         class="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.example.gio.autostop.User_Interface.activities.MapsActivity" />
+        tools:context="com.example.gio.autostop.user_interface.activities.MapsActivity" />
 
     <fragment
         android:id="@+id/destinationFragment"
-        android:name="com.example.gio.autostop.User_Interface.fragments.DestinationFragment"
-        class="com.example.gio.autostop.User_Interface.fragments.DestinationFragment"
+        android:name="com.example.gio.autostop.user_interface.fragments.DestinationFragment"
+        class="com.example.gio.autostop.user_interface.fragments.DestinationFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

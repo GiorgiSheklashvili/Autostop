@@ -1,4 +1,4 @@
-package com.example.gio.autostop.User_Interface.activities;
+package com.example.gio.autostop.user_interface.activities;
 
 import android.Manifest;
 import android.app.ProgressDialog;
@@ -9,15 +9,15 @@ import android.location.Geocoder;
 import android.location.Location;
 
 import com.example.gio.autostop.Constants;
-import com.example.gio.autostop.Server.DataRequestManager;
+import com.example.gio.autostop.server.DataRequestManager;
 import com.example.gio.autostop.R;
-import com.example.gio.autostop.Server.Positions;
-import com.example.gio.autostop.Settings;
-import com.example.gio.autostop.User_Interface.fragments.AddressFragment;
-import com.example.gio.autostop.User_Interface.fragments.DriverFragment;
-import com.example.gio.autostop.User_Interface.fragments.MapFunctionsFragment;
-import com.example.gio.autostop.User_Interface.services.FetchAddressIntentService;
-import com.example.gio.autostop.User_Interface.services.JSONParser;
+import com.example.gio.autostop.server.Positions;
+import com.example.gio.autostop.AutostopSettings;
+import com.example.gio.autostop.user_interface.fragments.AddressFragment;
+import com.example.gio.autostop.user_interface.fragments.DriverFragment;
+import com.example.gio.autostop.user_interface.fragments.MapFunctionsFragment;
+import com.example.gio.autostop.user_interface.services.FetchAddressIntentService;
+import com.example.gio.autostop.user_interface.services.JSONParser;
 import com.google.android.gms.location.LocationListener;
 
 import android.os.AsyncTask;
@@ -55,13 +55,11 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 public class MapsActivity extends FragmentActivity implements LocationListener,
         GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
         GoogleApiClient.ConnectionCallbacks, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter,GoogleMap.OnMapClickListener
 {
-
     public final static int MILLISECONDS_PER_SECOND = 1000;
     public final static int REQUEST_FINE_LOCATION = 0;
     public final static int MINUTE = 60 * MILLISECONDS_PER_SECOND;
@@ -74,6 +72,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     public AddressFragment AddressFragment;
     public MapFunctionsFragment mapFunctions;
     public DriverFragment driverFragment;
+    public ProgressDialog progressDialog;
     private TextView mLocationAddressTextView;
     public GoogleMap mMap;// Might be null if Google Play services APK is not available.
     private String mLastUpdateTime;
@@ -93,6 +92,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        overridePendingTransition(R.anim.activity_open_translate,R.anim.activity_close_scale);
         setContentView(R.layout.activity_maps);
         Intent intent = getIntent();
         mChosenMode = intent.getBooleanExtra(Constants.chosenMode, false);
@@ -121,7 +121,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            Settings.checkGps(this);
+            AutostopSettings.checkGps(this);
         }
         mResultReceiver = new AddressResultReceiver(new Handler());
         mAddressOutput = " ";
@@ -138,6 +138,15 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     protected void onStart() {
         super.onStart();
         mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(progressDialog!= null){
+            progressDialog.dismiss();
+            progressDialog=null;
+        }
     }
 
     @Override
@@ -186,6 +195,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     @Override
     protected void onPause() {
         super.onPause();
+        overridePendingTransition(R.anim.activity_close_translate,R.anim.activity_open_scale);
         if (mGoogleApiClient.isConnected() && startedLocationUpdate)
             stopLocationUpdates();
     }
@@ -210,7 +220,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 if (grantResults.length == 1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     enableMyLocation();
-                    Settings.checkGps(this);
+                    AutostopSettings.checkGps(this);
                 } else {
                     Toast.makeText(MapsActivity.this, "Permission was blocked", Toast.LENGTH_SHORT).show();
                 }
@@ -220,7 +230,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
 
     @Override
     public boolean onMyLocationButtonClick() {
-        Settings.checkGps(this);
+        AutostopSettings.checkGps(this);
         return false;
     }
 
@@ -236,7 +246,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                     != PackageManager.PERMISSION_GRANTED) {
                 // Permission to access the location is missing.
                 if (permissionRequestCounter == 0) {
-                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
+                    }
+
                     permissionRequestCounter++;
                 }
             } else if (mMap != null) {
@@ -261,7 +274,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
                 startedLocationUpdate = true;
             } else {
                 if (permissionRequestCounter == 0) {
-                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
+                    }
                     permissionRequestCounter++;
                 }
             }
@@ -299,7 +314,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
             LatLng position = markerForDeletionDestination.getPosition();
             MapFunctionsFragment.setMarkerForDeletionDestination(markerForDeletionDestination);
             MapFunctionsFragment.uploadingPosition(position, mChosenMode);
-            com.example.gio.autostop.Settings.saveBoolean("mCheckOutForDriverButton", true);
+            AutostopSettings.saveBoolean("mCheckOutForDriverButton", true);
             if (mChosenMode)
                 DriverFragment.unCheckDriver.setClickable(true);
         }
@@ -351,7 +366,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         intent.putExtra(Constants.RECEIVER, mResultReceiver);
         intent.putExtra(Constants.LOCATION_DATA_EXTRA, loc);
         startService(intent);
-
     }
 
     public String makeURL(double sourceLat, double sourceLog, double destLat, double destLog) {
@@ -465,7 +479,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
     }
 
     private class connectAsyncTask extends AsyncTask<Void, Void, String> {
-        private ProgressDialog progressDialog;
         String url;
         Marker marker;
 
@@ -486,14 +499,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener,
         @Override
         protected String doInBackground(Void... params) {
             JSONParser jParser = new JSONParser();
-            String json = jParser.getJSONFromUrl(url);
-            return json;
+            return jParser.getJSONFromUrl(url);
         }
 
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            progressDialog.hide();
+            progressDialog.dismiss();
+            progressDialog=null;
             if (result != null) {
                 drawPath(result, marker);
             }

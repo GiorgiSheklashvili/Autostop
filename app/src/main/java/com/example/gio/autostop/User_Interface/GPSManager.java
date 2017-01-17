@@ -1,4 +1,4 @@
-package com.example.gio.autostop.User_Interface;
+package com.example.gio.autostop.user_interface;
 
 
 import android.Manifest;
@@ -8,7 +8,7 @@ import android.location.Location;
 import android.support.v4.app.ActivityCompat;
 
 import com.example.gio.autostop.App;
-import com.example.gio.autostop.User_Interface.interfaces.GPSCallback;
+import com.example.gio.autostop.user_interface.interfaces.GPSCallback;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;

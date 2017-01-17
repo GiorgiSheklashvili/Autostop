@@ -9,7 +9,7 @@ public class App extends Application{
     @Override
     public void onCreate() {
         super.onCreate();
-        Settings.initialize(this);
+        AutostopSettings.initialize(this);
         App.context = getApplicationContext();
     }
     public static Context getAppContext() {

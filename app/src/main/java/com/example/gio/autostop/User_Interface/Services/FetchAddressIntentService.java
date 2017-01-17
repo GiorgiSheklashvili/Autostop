@@ -1,4 +1,4 @@
-package com.example.gio.autostop.User_Interface.services;
+package com.example.gio.autostop.user_interface.services;
 
 import android.app.IntentService;
 import android.content.Intent;
