@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <fragment
+        android:id="@+id/map"
+        class="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="com.example.gio.autostop.user_interface.activities.MainActivity" >
+    <Button
+        android:id="@+id/checkout"
+        android:layout_marginRight="@dimen/button_margin_right"
+        android:layout_marginBottom="@dimen/button_margin_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/UnCheck"
+        android:layout_gravity="bottom|end"
+        android:clickable="false" />
+    </fragment>
+</LinearLayout>

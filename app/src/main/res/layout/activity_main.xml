@@ -1,31 +1,7 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_height="match_parent"
-    android:background="#FF5C5C"
-    android:orientation="vertical"
-    tools:context=".user_interface.activities.MainActivity">
+    android:layout_width="match_parent"
+    android:id="@+id/fragment_container_main"
+    >
 
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:scaleType="center"
-        app:srcCompat="@drawable/logo" />
-
-    <include android:id="@+id/middle_frame"
-        layout="@layout/middle_frame"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        />
-
-    <include
-        android:id="@+id/trapezoid_frame"
-        layout="@layout/trapezoid_frame"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-</LinearLayout>
+</FrameLayout>

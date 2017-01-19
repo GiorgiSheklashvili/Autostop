@@ -2,6 +2,7 @@ package com.example.gio.autostop.user_interface.fragments;
 
 import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ResultReceiver;
@@ -17,6 +18,7 @@ import com.example.gio.autostop.Constants;
 import com.example.gio.autostop.user_interface.services.FetchAddressIntentService;
 import com.example.gio.autostop.R;
 import com.example.gio.autostop.user_interface.activities.MapsActivity;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 
 public class AddressFragment extends Fragment {
@@ -27,8 +29,8 @@ public class AddressFragment extends Fragment {
     private String mAddressOutput;
     private AddressResultReceiver mResultReceiver;
     private ProgressBar mProgressBar;
-    private MapsActivity mMapsActivity;
-
+    private GoogleApiClient mGoogleApiClient;
+    private Location mCurrentLocation;
     public AddressFragment() {
         // Required empty public constructor
     }
@@ -76,20 +78,21 @@ public class AddressFragment extends Fragment {
         mLocationAddressTextView.setText(mAddressOutput);
     }
 
-    public void setMapsActivity(MapsActivity mMapsActivity) {
-        this.mMapsActivity = mMapsActivity;
+    public void setVariables(Location currentLocation, GoogleApiClient googleApiClient) {
+        this.mCurrentLocation =currentLocation;
+        this.mGoogleApiClient=googleApiClient;
     }
 
     public void startIntentService() {
         Intent intent = new Intent(getContext(), FetchAddressIntentService.class);
         intent.putExtra(Constants.RECEIVER, mResultReceiver);
-        intent.putExtra(Constants.LOCATION_DATA_EXTRA, mMapsActivity.mCurrentLocation);
-        mMapsActivity.startService(intent);
+        intent.putExtra(Constants.LOCATION_DATA_EXTRA, mCurrentLocation);
+        getActivity().startService(intent);
 
     }
 
     public void fetchAddressHandler() {
-        if (mMapsActivity.mGoogleApiClient.isConnected() && mMapsActivity.mCurrentLocation != null) {
+        if (mGoogleApiClient.isConnected() && mCurrentLocation != null) {
             AddressRequested = true;
             updateUIWidgets();
             startIntentService();
