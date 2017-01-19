@@ -1,4 +1,4 @@
-package com.example.gio.autostop.user_interface.services;
+package com.example.gio.autostop.services;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;

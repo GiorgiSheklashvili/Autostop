@@ -14,10 +14,9 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.example.gio.autostop.Constants;
-import com.example.gio.autostop.user_interface.services.FetchAddressIntentService;
+import com.example.gio.autostop.helper.Constants;
+import com.example.gio.autostop.services.FetchAddressIntentService;
 import com.example.gio.autostop.R;
-import com.example.gio.autostop.user_interface.activities.MapsActivity;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 

@@ -1,4 +1,4 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.helper;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,6 +10,7 @@ import android.location.LocationManager;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 
+import com.example.gio.autostop.App;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;

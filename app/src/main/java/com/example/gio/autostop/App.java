@@ -3,6 +3,8 @@ package com.example.gio.autostop;
 import android.app.Application;
 import android.content.Context;
 
+import com.example.gio.autostop.helper.AutostopSettings;
+
 
 public class App extends Application{
     private static Context context;

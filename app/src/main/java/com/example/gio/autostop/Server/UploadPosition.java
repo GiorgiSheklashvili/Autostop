@@ -1,17 +1,7 @@
 package com.example.gio.autostop.server;
 
-import android.provider.Settings;
-import android.support.v7.app.AlertDialog;
-
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-import com.example.gio.autostop.AutostopSettings;
-import com.google.android.gms.maps.model.LatLng;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;

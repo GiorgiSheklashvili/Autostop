@@ -1,8 +1,6 @@
 package com.example.gio.autostop.user_interface.fragments;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -19,13 +17,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.gio.autostop.Constants;
+import com.example.gio.autostop.helper.Constants;
 import com.example.gio.autostop.R;
-import com.example.gio.autostop.user_interface.OnSwipeTouchListener;
-import com.example.gio.autostop.user_interface.activities.MainActivity;
-import com.example.gio.autostop.user_interface.activities.MapsActivity;
-
-import java.util.Map;
+import com.example.gio.autostop.helper.OnSwipeTouchListener;
 
 
 public class MainFragment extends Fragment {

@@ -1,4 +1,4 @@
-package com.example.gio.autostop;
+package com.example.gio.autostop.helper;
 
 
 public class Constants {

@@ -31,11 +31,8 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
-        <activity
-            android:name=".user_interface.activities.MapsActivity"
-            android:label="@string/title_activity_maps"></activity>
         <service
-            android:name=".user_interface.services.FetchAddressIntentService"
+            android:name=".services.FetchAddressIntentService"
             android:exported="false" />
     </application>
     <meta-data
