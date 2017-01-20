@@ -16,8 +16,8 @@ import com.google.android.gms.location.LocationServices;
 
 
 public class GPSManager {
-    private static final int gpsMinTime = 60*1000;
-    private static final int gpsMinDistance = 0;
+    private final int gpsMinTime = 60*1000;
+    private final int gpsMinDistance = 0;
     protected LocationRequest mLocationRequest;
 //    private static LocationManager locationManager = null;
     private static LocationListener locationListener = null;
@@ -43,37 +43,12 @@ public class GPSManager {
     }
 
     public void startListening(final Context context, GoogleApiClient googleApiClient) {
-//        if (GPSManager.locationManager == null) {
-//            GPSManager.locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-//        }
         createLocationRequest();
-//        final Criteria criteria = new Criteria();
-//
-//        criteria.setAccuracy(Criteria.ACCURACY_FINE);
-//        criteria.setSpeedRequired(true);
-//        criteria.setAltitudeRequired(false);
-//        criteria.setBearingRequired(false);
-//        criteria.setCostAllowed(true);
-//        criteria.setPowerRequirement(Criteria.POWER_LOW);
-//
-//        final String bestProvider = GPSManager.locationManager.getBestProvider(criteria, true);
-
-//        if (bestProvider != null && bestProvider.length() > 0) {
             if (ActivityCompat.checkSelfPermission(App.getAppContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(App.getAppContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
 
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient,mLocationRequest,GPSManager.locationListener);
-//            GPSManager.locationManager.requestLocationUpdates(bestProvider, GPSManager.gpsMinTime,
-//                    GPSManager.gpsMinDistance, GPSManager.locationListener);
-//        } else {
-//            final List<String> providers = GPSManager.locationManager.getProviders(true);
-//
-//            for (final String provider : providers) {
-//                GPSManager.locationManager.requestLocationUpdates(provider, GPSManager.gpsMinTime,
-//                        GPSManager.gpsMinDistance, GPSManager.locationListener);
-//                LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient,mLocationRequest,GPSManager.locationListener);
-//            }
         }
     protected void createLocationRequest() {
         mLocationRequest = new LocationRequest();

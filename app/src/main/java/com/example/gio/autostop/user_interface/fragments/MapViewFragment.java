@@ -1,7 +1,6 @@
 package com.example.gio.autostop.user_interface.fragments;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -62,11 +61,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.NetworkInterface;
@@ -109,7 +106,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
     private GPSManager gpsManager = null;
     private Button mCheckOutButton;
     private Marker markerForDeletion, markerForDeletionDestination, markerVariable;
-    public  LocationManager locationManager;
+    public LocationManager locationManager;
     private AlertDialog.Builder builder;
     private Location location;
     private LatLng newLatLng;
@@ -119,14 +116,14 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
     private Double lastSpeed = 0.0;
     public ArrayList<Marker> mMarkerCollection = new ArrayList<>();
     String myMac, deviceId;
-    public  Positions position;
+    public Positions position;
 
     @Override
     public void onViewCreated(final View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         setUpMapIfNeeded();
         showDestinationAlertDialog();
-        getActivity().overridePendingTransition(R.anim.activity_open_translate, R.anim.activity_close_scale);//???
+//        getActivity().overridePendingTransition(R.anim.activity_open_translate, R.anim.activity_close_scale);//???
         if (markerForDeletion == null)
             AutostopSettings.saveBoolean("carIconAlreadyCreated", false);
         mCheckOutButton = (Button) view.findViewById(R.id.checkout);
@@ -150,26 +147,29 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         Bundle bundle = getArguments();
-        mChosenMode = bundle.getBoolean(Constants.chosenMode);
-        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-        startedLocationUpdate = false;
-        permissionRequestCounter = 0;
-        locationRequest = new LocationRequest();
-        locationRequest.setInterval(MINUTE);
-        locationRequest.setFastestInterval(15 * MILLISECONDS_PER_SECOND);
-        locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            AutostopSettings.checkGps(getContext());
+        if (bundle != null) {
+            mChosenMode = bundle.getBoolean(Constants.chosenMode);
+            mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+            startedLocationUpdate = false;
+            permissionRequestCounter = 0;
+            locationRequest = new LocationRequest();
+            locationRequest.setInterval(MINUTE);
+            locationRequest.setFastestInterval(15 * MILLISECONDS_PER_SECOND);
+            locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
+            if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                AutostopSettings.checkGps(getContext());
+            }
+            mResultReceiver = new AddressResultReceiver(new Handler());
+            mAddressOutput = " ";
+            updateValuesFromBundle(savedInstanceState);
+            return inflater.inflate(R.layout.fragment_map_view, container, false);
         }
-        mResultReceiver = new AddressResultReceiver(new Handler());
-        mAddressOutput = " ";
-        updateValuesFromBundle(savedInstanceState);
-        return inflater.inflate(R.layout.fragment_map_view, container, false);
+        return null;
     }
 
     public void checkInCurrentPosition(Context context) {
@@ -192,7 +192,6 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
         } else {
             location = locationNet;
         }
-//        assert location != null;
         if (location == null)
             location = getLastKnownLocation(context);
         newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -246,7 +245,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
         return bestLocation;
     }
 
-    public void uploadingPosition(LatLng destinationPosition, final Boolean chosenMode) {
+    private void uploadingPosition(LatLng destinationPosition, final Boolean chosenMode) {
         if (!chosenMode) {
             AutostopSettings.saveBoolean("passengerIconAlreadyCreated", true);
         }
@@ -330,18 +329,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
         lastSpeed = 0.0;
     }
 
-    //    private static String measurementUnitString(int unitIndex){
-//        String string = "";
-//
-//        switch(unitIndex)
-//        {
-//            case Constants.INDEX_KM:		string = "km/h";	break;
-//            case Constants.INDEX_MILES:	string = "mi/h";	break;
-//        }
-//
-//        return string;
-//    }
-    private  double roundDecimal(double value, final int decimalPlace) {
+    private double roundDecimal(double value, final int decimalPlace) {
         BigDecimal bd = new BigDecimal(value);
 
         bd = bd.setScale(decimalPlace, RoundingMode.HALF_UP);
@@ -445,7 +433,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
         }
     };
 
-    private  boolean isMarkerOnArray(ArrayList<Marker> array, Double Latitude, Double Longitude) {
+    private boolean isMarkerOnArray(ArrayList<Marker> array, Double Latitude, Double Longitude) {
         Marker current;
         for (int c = 0; c < array.size(); c++) {
             current = array.get(c);
@@ -537,7 +525,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
     @Override
     public void onPause() {
         super.onPause();
-        ((Activity) getContext()).overridePendingTransition(R.anim.activity_close_translate, R.anim.activity_open_scale);
+//        ((Activity) getContext()).overridePendingTransition(R.anim.activity_close_translate, R.anim.activity_open_scale);
         if (mGoogleApiClient.isConnected() && startedLocationUpdate)
             stopLocationUpdates();
     }
@@ -576,7 +564,6 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
             gpsManager.setGPSCallback(null);
             gpsManager = null;
         }
-
     }
 
     @Override
@@ -749,14 +736,13 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
             tempPolyline.remove();
             markerList.remove(markerList.indexOf(marker));
         } else {
-                LatLng latLng = marker.getPosition();
-                Positions searchedPosition = DataRequestManager.searchList(latLng.latitude, latLng.longitude);
-                if (searchedPosition != null) {
-                    url = makeURL(searchedPosition.getLatitude(), searchedPosition.getLongitude(), searchedPosition.getLatitudeDestination(), searchedPosition.getLongitudeDestination());
-                    new connectAsyncTask(url, marker).execute();
-                }
-                else
-                    return false;
+            LatLng latLng = marker.getPosition();
+            Positions searchedPosition = DataRequestManager.searchList(latLng.latitude, latLng.longitude);
+            if (searchedPosition != null) {
+                url = makeURL(searchedPosition.getLatitude(), searchedPosition.getLongitude(), searchedPosition.getLatitudeDestination(), searchedPosition.getLongitudeDestination());
+                new connectAsyncTask(url, marker).execute();
+            } else
+                return false;
         }
         return true;
     }

@@ -20,7 +20,6 @@ import com.example.gio.autostop.R;
 public class TrapezoidDrawableView extends View {
     Paint white, gray;
     int whiteInt;
-    int k = 22;
     Point[] leftTop = new Point[3];
     Point[] rightTop = new Point[3];
     Point[] leftBottom = new Point[3];

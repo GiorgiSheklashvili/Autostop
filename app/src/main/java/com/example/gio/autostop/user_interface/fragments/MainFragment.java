@@ -1,8 +1,6 @@
 package com.example.gio.autostop.user_interface.fragments;
 
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -17,30 +15,36 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.gio.autostop.MVP_Interfaces;
+import com.example.gio.autostop.helper.AutostopSettings;
 import com.example.gio.autostop.helper.Constants;
 import com.example.gio.autostop.R;
 import com.example.gio.autostop.helper.OnSwipeTouchListener;
+import com.example.gio.autostop.user_interface.activities.MainActivity;
 
 
 public class MainFragment extends Fragment {
-    public ImageView goImageView;
-    public TextView driver;
-    public TextView passenger;
-    View slideView;
-    LinearLayout chooseButtonLayout;
-    Boolean choose = false;
+    private TextView driver;
+    private TextView passenger;
+    private View slideView;
+    private LinearLayout chooseButtonLayout;
+    private Boolean choose = false;
+    private ImageView goImageView;
+    private onChooseModeListener mCallback;
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-
-        return inflater.inflate(R.layout.fragment_main,container,false);
+    public interface onChooseModeListener{
+        void notifyChosenMode(boolean chosen);
     }
-
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+        mCallback=(onChooseModeListener) context;
+    }
 
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_main, container, false);
     }
 
     @Override
@@ -53,19 +57,11 @@ public class MainFragment extends Fragment {
         goImageView.setOnClickListener(new View.OnClickListener() {
                                            @Override
                                            public void onClick(View v) {
-                                               if (checkIfInternetIsAvailable(v.getContext()))
-                                               {
-                                                   MapViewFragment mapViewFragment=new MapViewFragment();
-                                                   Bundle args=new Bundle();
-                                                   args.putBoolean(Constants.chosenMode,choose);
-                                                   mapViewFragment.setArguments(args);
-                                                   FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
-                                                   transaction.replace(R.id.fragment_container_main, mapViewFragment);
-                                                   transaction.addToBackStack(null);
-                                                   transaction.commit();
-                                               }
-                                               else
+                                               if (AutostopSettings.checkIfInternetIsAvailable(v.getContext())) {
+                                                   mCallback.notifyChosenMode(choose);
+                                               } else {
                                                    Toast.makeText(v.getContext(), "No Internet", Toast.LENGTH_LONG).show();
+                                               }
                                            }
                                        }
         );
@@ -113,21 +109,6 @@ public class MainFragment extends Fragment {
         });
 
         super.onViewCreated(view, savedInstanceState);
-    }
-    public void displayMap(boolean choose) {
-//        Intent intent = new Intent(this, MapsActivity.class);
-//        intent.putExtra(Constants.chosenMode, choose);
-//        startActivity(intent);
-    }
-
-    public boolean checkIfInternetIsAvailable(Context context) {
-        ConnectivityManager cm =
-                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        boolean isConnected = activeNetwork != null &&
-                activeNetwork.isConnectedOrConnecting();
-        return isConnected;
     }
 
 }

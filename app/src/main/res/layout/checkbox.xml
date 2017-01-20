@@ -5,8 +5,6 @@
     android:layout_height="match_parent"
     android:orientation="horizontal"
     android:padding="10dp">
-
-
     <CheckBox
         android:id="@+id/skip"
         android:layout_width="wrap_content"
