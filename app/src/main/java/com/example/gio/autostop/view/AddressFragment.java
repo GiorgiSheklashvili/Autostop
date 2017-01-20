@@ -1,4 +1,4 @@
-package com.example.gio.autostop.user_interface.fragments;
+package com.example.gio.autostop.view;
 
 import android.content.Context;
 import android.content.Intent;
@@ -18,7 +18,6 @@ import com.example.gio.autostop.helper.Constants;
 import com.example.gio.autostop.services.FetchAddressIntentService;
 import com.example.gio.autostop.R;
 import com.google.android.gms.common.api.GoogleApiClient;
-
 
 public class AddressFragment extends Fragment {
     public boolean AddressRequested;
@@ -52,7 +51,6 @@ public class AddressFragment extends Fragment {
         super.onSaveInstanceState(outState);
         outState.putBoolean(ADDRESS_REQUESTED_KEY, AddressRequested);
         outState.putString(LOCATION_ADDRESS_KEY, mAddressOutput);
-
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.example.gio.autostop.user_interface.fragments;
+package com.example.gio.autostop.view;
 
 import android.Manifest;
 import android.app.ProgressDialog;
@@ -31,19 +31,16 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.toolbox.Volley;
+import com.example.gio.autostop.MVP_Interfaces;
 import com.example.gio.autostop.helper.AutostopSettings;
 import com.example.gio.autostop.helper.Constants;
 import com.example.gio.autostop.R;
-import com.example.gio.autostop.server.DataRequestManager;
-import com.example.gio.autostop.server.DeletePosition;
+import com.example.gio.autostop.model.MapModel;
+import com.example.gio.autostop.presenter.MapPresenter;
 import com.example.gio.autostop.server.Positions;
-import com.example.gio.autostop.server.UploadPosition;
 import com.example.gio.autostop.helper.GPSManager;
-import com.example.gio.autostop.user_interface.interfaces.GPSCallback;
-import com.example.gio.autostop.user_interface.interfaces.MapRequestRequestCallback;
+import com.example.gio.autostop.interfaces.GPSCallback;
+import com.example.gio.autostop.interfaces.MapRequestRequestCallback;
 import com.example.gio.autostop.services.FetchAddressIntentService;
 import com.example.gio.autostop.services.JSONParser;
 import com.google.android.gms.common.ConnectionResult;
@@ -66,17 +63,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.NetworkInterface;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 
-public class MapViewFragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+public class MapFragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         LocationListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMapLongClickListener,
-        GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter, GoogleMap.OnMapClickListener {
+        GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter, GoogleMap.OnMapClickListener,MVP_Interfaces.RequiredViewOps {
     private GoogleMap mMap;// Might be null if Google Play services APK is not available.
     private GoogleApiClient mGoogleApiClient;
     private CheckBox doNotShowAgain;
@@ -106,17 +101,14 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
     private GPSManager gpsManager = null;
     private Button mCheckOutButton;
     private Marker markerForDeletion, markerForDeletionDestination, markerVariable;
-    public LocationManager locationManager;
-    private AlertDialog.Builder builder;
-    private Location location;
-    private LatLng newLatLng;
     private int measurement_index = Constants.INDEX_KM;
     private double speed = 0.0;
     private LatLng tempDestinationPosition, tempLatLng;
     private Double lastSpeed = 0.0;
     public ArrayList<Marker> mMarkerCollection = new ArrayList<>();
     String myMac, deviceId;
-    public Positions position;
+    private LocationManager locationManager;
+    private MVP_Interfaces.ProvidedPresenterOps mPresenter;
 
     @Override
     public void onViewCreated(final View view, @Nullable Bundle savedInstanceState) {
@@ -133,7 +125,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
             public void onClick(View v) {
                 mCheckOutButton.setClickable(false);
                 AutostopSettings.saveBoolean("mCheckOutButton", false);
-                deleteMarkers();
+                mPresenter.notifyToDeleteMarkers(markerForDeletion,getActivity());
                 gpsManagerRemove(gpsManager);
                 if (mChosenMode)
                     AutostopSettings.saveBoolean("carIconAlreadyCreated", false);
@@ -146,6 +138,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        setupMVP();
         Bundle bundle = getArguments();
         if (bundle != null) {
             mChosenMode = bundle.getBoolean(Constants.chosenMode);
@@ -172,240 +165,12 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
         return null;
     }
 
-    public void checkInCurrentPosition(Context context) {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        Location locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        Location locationNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        long GPSLocationTime = 0;
-        if (null != locationGPS) {
-            GPSLocationTime = locationGPS.getTime();
-        }
-        long NetLocationTime = 0;
-        if (null != locationNet) {
-            NetLocationTime = locationNet.getTime();
-        }
-        if (0 < GPSLocationTime - NetLocationTime) {
-            location = locationGPS;
-        } else {
-            location = locationNet;
-        }
-        if (location == null)
-            location = getLastKnownLocation(context);
-        newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-        if (!mChosenMode) {
-            if (!AutostopSettings.getBoolean("passengerIconAlreadyCreated")) {
-                markerForDeletion = mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
-                markerForDeletion.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.passenger));
-                AutostopSettings.saveBoolean("passengerIconAlreadyCreated", false);
-            }
-        } else {
-            if (!AutostopSettings.getBoolean("carIconAlreadyCreated")) {
-                markerForDeletion = mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
-                markerForDeletion.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.car));
-                AutostopSettings.saveBoolean("carIconAlreadyCreated", false);
-            }
-        }
-    }
-
-    public void deleteMarkers() {
-        deletePosition();
-        markerForDeletion.remove();
-        markerForDeletion = null;
-        if (markerForDeletionDestination != null)
-            markerForDeletionDestination.remove();
-        if (!mChosenMode) {
-            AutostopSettings.saveBoolean("mCheckOutButton", false);
-        } else {
-            AutostopSettings.saveBoolean("mCheckOutForDriverButton", false);
-            mCheckOutButton.setClickable(false);
-        }
-
-    }
-
-    private Location getLastKnownLocation(Context context) {
-        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        List<String> providers = locationManager.getProviders(true);
-        Location bestLocation = null;
-        for (String provider : providers) {
-            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                return null;
-            }
-            Location l = locationManager.getLastKnownLocation(provider);
-            if (l == null) {
-                continue;
-            }
-            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
-                // Found best last known location: %s", l);
-                bestLocation = l;
-            }
-        }
-        return bestLocation;
-    }
-
-    private void uploadingPosition(LatLng destinationPosition, final Boolean chosenMode) {
-        if (!chosenMode) {
-            AutostopSettings.saveBoolean("passengerIconAlreadyCreated", true);
-        }
-        AutostopSettings.saveBoolean("mCheckOutButton", true);
-        AutostopSettings.saveBoolean("mCheckOutForDriverButton", true);
-        mChosenMode = chosenMode;
-        if (location == null) {
-            newLatLng = new LatLng(AutostopSettings.getLong("Latitude"), AutostopSettings.getLong("Longitude"));
-        }
-        String deviceId = Settings.Secure.getString(getActivity().getContentResolver(), Settings.Secure.ANDROID_ID);
-        position = new Positions(newLatLng.latitude, newLatLng.longitude, destinationPosition.latitude, destinationPosition.longitude, chosenMode, getWifiMacAddress(), deviceId);
-        Response.Listener<String> responseListener = new Response.Listener<String>() {
-            @Override
-            public void onResponse(String s) {
-                try {
-                    JSONObject jsonResponse = new JSONObject(s);
-                    boolean success = jsonResponse.getBoolean("success");
-                    if (!success) {
-                        builder = new AlertDialog.Builder(getContext());
-                        builder.setMessage("uploading position failed")
-                                .setNegativeButton("retry", null)
-                                .create()
-                                .show();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        };
-        UploadPosition upload = new UploadPosition(position, responseListener);
-        RequestQueue queue = Volley.newRequestQueue(getContext());
-        queue.add(upload);
-        gpsManagerStart(destinationPosition, chosenMode);
-    }
-
-    public void gpsManagerStart(LatLng destinationPosition, final Boolean chosenMode) {
-        gpsManager = new GPSManager();
-        gpsManager.startListening(getContext(), mGoogleApiClient);
-        tempDestinationPosition = destinationPosition;
-        gpsManager.setGPSCallback(new GPSCallback() {
-            @Override
-            public void onGPSUpdate(Location location) {
-                location.getLatitude();
-                location.getLongitude();
-                speed = location.getSpeed();
-                Double speedDouble = roundDecimal(convertSpeed(speed), 2);
-//                String unitString = measurementUnitString(measurement_index);
-                if (speedDouble > Constants.Speed_Margin) {//manqanit mgzavroba
-                    if (chosenMode) {
-                        lastSpeed = speedDouble;
-                        checkInCurrentPosition(getContext());
-                        uploadingPosition(tempDestinationPosition, true);
-                        Toast.makeText(getContext(), "driver " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
-                    }
-                    Toast.makeText(getContext(), "mgzavri manqanashi " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
-
-                } else {//pexit mgzavroba
-                    if (lastSpeed > 0.0) {
-                        checkInReminderAlertMessage(getContext());
-                        Toast.makeText(getContext(), "pexit  " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
-                    }
-                }
-
-            }
-        });
-
-    }
-
-    private void checkInReminderAlertMessage(final Context context) {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setMessage("You have gone from previous place,it is strongly recommended to check in new position")
-                .setCancelable(false)
-                .setNegativeButton("Ok", new DialogInterface.OnClickListener() {
-                    public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
-                        dialog.cancel();
-                    }
-                });
-        alert = builder.create();
-        alert.show();
-        lastSpeed = 0.0;
-    }
-
-    private double roundDecimal(double value, final int decimalPlace) {
-        BigDecimal bd = new BigDecimal(value);
-
-        bd = bd.setScale(decimalPlace, RoundingMode.HALF_UP);
-        value = bd.doubleValue();
-
-        return value;
-    }
-
-    private double convertSpeed(double speed) {
-        return ((speed * Constants.HOUR_MULTIPLIER) * Constants.UNIT_MULTIPLIERS[measurement_index]);
-    }
-
-    public void deletePosition() {
-        String deviceId = Settings.Secure.getString(getActivity().getContentResolver(), Settings.Secure.ANDROID_ID);
-        String mac = getWifiMacAddress();
-        Response.Listener<String> responseListener = new Response.Listener<String>() {
-            @Override
-            public void onResponse(String s) {
-                try {
-                    JSONObject jsonResponse = new JSONObject(s);
-                    boolean success = jsonResponse.getBoolean("success");
-                    if (!success) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                        builder.setMessage("deleting position failed")
-                                .setNegativeButton("retry", null)
-                                .create()
-                                .show();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        DeletePosition delete = new DeletePosition(mac, deviceId, responseListener);
-        RequestQueue queue = Volley.newRequestQueue(getContext());
-        queue.add(delete);
-    }
-
-
-    public String getWifiMacAddress() {
-        try {
-            String interfaceName = "wlan0";
-            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-            for (NetworkInterface intf : interfaces) {
-                if (!intf.getName().equalsIgnoreCase(interfaceName)) {
-                    continue;
-                }
-                byte[] mac = intf.getHardwareAddress();
-                if (mac == null) {
-                    return "";
-                }
-
-                StringBuilder buf = new StringBuilder();
-                for (byte aMac : mac) {
-                    buf.append(String.format("%02X:", aMac));
-                }
-                if (buf.length() > 0) {
-                    buf.deleteCharAt(buf.length() - 1);
-                }
-                return buf.toString();
-            }
-        } catch (Exception ex) {
-            Log.i("getWifiMacAddress", "exception in getWifiMacAddress");
-        }
-        return "";
-    }
-
-    public boolean isMarkerForDeletionInitialized() {
-        return markerForDeletion != null;
-    }
 
     public MapRequestRequestCallback callback = new MapRequestRequestCallback() {
         @Override
         public void onRequestedLoaded(double lat, double lon, String mac, String android_id, double latitudeDestination, double longitudeDestination, Boolean kindOfUser) {
             deviceId = Settings.Secure.getString(getActivity().getContentResolver(), Settings.Secure.ANDROID_ID);
-            myMac = getWifiMacAddress();
+            myMac =  mPresenter.getWifiAddress();
             if (!isMarkerOnArray(mMarkerCollection, lat, lon) || (myMac.equals(mac) && deviceId.equals(android_id)))
                 if (myMac.equals(mac) && deviceId.equals(android_id)) {
                     markerForDeletion = mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)));
@@ -432,18 +197,110 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
                 }
         }
     };
-
-    private boolean isMarkerOnArray(ArrayList<Marker> array, Double Latitude, Double Longitude) {
-        Marker current;
-        for (int c = 0; c < array.size(); c++) {
-            current = array.get(c);
-            if ((current.getPosition().latitude == Latitude) && (current.getPosition().longitude == Longitude))
-                return true;
+    @Override
+    public void dropMarkerOnMap(LatLng newLatLng) {
+        if (!mChosenMode) {
+            if (!AutostopSettings.getBoolean("passengerIconAlreadyCreated")) {
+                markerForDeletion = mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
+                markerForDeletion.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.passenger));
+                AutostopSettings.saveBoolean("passengerIconAlreadyCreated", false);
+            }
+        } else {
+            if (!AutostopSettings.getBoolean("carIconAlreadyCreated")) {
+                markerForDeletion = mMap.addMarker(new MarkerOptions().position(newLatLng).title(newLatLng.toString()));
+                markerForDeletion.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.car));
+                AutostopSettings.saveBoolean("carIconAlreadyCreated", false);
+            }
         }
-        return false;
     }
 
-    private void showDestinationAlertDialog() {
+
+    @Override
+    public void notifyDeletedMarkers() {
+        if (markerForDeletionDestination != null)
+            markerForDeletionDestination.remove();
+        if (!mChosenMode) {
+            AutostopSettings.saveBoolean("mCheckOutButton", false);
+        } else {
+            AutostopSettings.saveBoolean("mCheckOutForDriverButton", false);
+            mCheckOutButton.setClickable(false);
+        }
+
+    }
+
+
+    @Override
+    public Location notifyGetLastKnownLocation(Context context) {
+        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        List<String> providers = locationManager.getProviders(true);
+        Location bestLocation = null;
+        for (String provider : providers) {
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return null;
+            }
+            Location l = locationManager.getLastKnownLocation(provider);
+            if (l == null) {
+                continue;
+            }
+            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
+                // Found best last known location: %s", l);
+                bestLocation = l;
+            }
+        }
+        return bestLocation;
+
+    }
+
+    @Override
+    public void gpsManagerStart(LatLng destinationPosition,final Boolean chosenMode) {
+            gpsManager = new GPSManager();
+            gpsManager.startListening(getContext(), mGoogleApiClient);
+            tempDestinationPosition = destinationPosition;
+            gpsManager.setGPSCallback(new GPSCallback() {
+                @Override
+                public void onGPSUpdate(Location location) {
+                    location.getLatitude();
+                    location.getLongitude();
+                    speed = location.getSpeed();
+                    Double speedDouble = roundDecimal(convertSpeed(speed), 2);
+//                String unitString = measurementUnitString(measurement_index);
+                    if (speedDouble > Constants.Speed_Margin) {//manqanit mgzavroba
+                        if (chosenMode) {
+                            lastSpeed = speedDouble;
+                            mPresenter.notifyDropMarker(mPresenter.checkInCurrentPosition(getContext()));
+                            mPresenter.uploadingPosition(getActivity(),tempDestinationPosition, chosenMode);
+                            Toast.makeText(getContext(), "driver " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
+                        }
+                        Toast.makeText(getContext(), "passenger is in car" + speedDouble.toString(), Toast.LENGTH_SHORT).show();
+
+                    } else {//pexit mgzavroba
+                        if (lastSpeed > 0.0) {
+                            checkInReminderAlertMessage(getContext());
+                            Toast.makeText(getContext(), "passenger is not in car  " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                }
+            });
+    }
+
+    @Override
+    public void checkInReminderAlertMessage(Context context) {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setMessage("You have gone from previous place,it is strongly recommended to check in new position")
+                .setCancelable(false)
+                .setNegativeButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                        dialog.cancel();
+                    }
+                });
+        alert = builder.create();
+        alert.show();
+        lastSpeed = 0.0;
+    }
+
+    @Override
+    public void showDestinationAlertDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater DialogInflater = LayoutInflater.from(getActivity());
         View messageLayout = DialogInflater.inflate(R.layout.checkbox, null);
@@ -466,6 +323,96 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
         if (!skipMessage.equals("checked"))
             dialog.show();
     }
+
+    @Override
+    public void drawPath(String result, Marker marker) {
+        try {
+            //Tranform the string into a json object
+            final JSONObject json = new JSONObject(result);
+            JSONArray routeArray = json.getJSONArray("routes");
+            JSONObject routes = routeArray.getJSONObject(0);
+            JSONObject overviewPolylines = routes.getJSONObject("overview_polyline");
+            String encodedString = overviewPolylines.getString("points");
+            List<LatLng> list = decodePoly(encodedString);
+            Polyline line = mMap.addPolyline(new PolylineOptions()
+                    .addAll(list)
+                    .width(12)
+                    .color(Color.parseColor("#05b1fb"))//Google maps blue color
+                    .geodesic(true)
+            );
+            marker.setTag(line);
+            markerList.add(marker);
+            polyLines.add(line);
+
+        } catch (JSONException e) {
+
+        }
+    }
+
+    @Override
+    public void setUpMapIfNeeded() {
+        if (mMap == null) {
+            ((SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.map))
+                    .getMapAsync(this);
+        }
+    }
+
+    @Override
+    public void enableMyLocation() {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+            if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                // Permission to access the location is missing.
+                if (permissionRequestCounter == 0) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
+                    }
+
+                    permissionRequestCounter++;
+                }
+            } else if (mMap != null) {
+                // Access to the location has been granted to the app.
+                mMap.setMyLocationEnabled(true);
+            }
+
+        }
+    }
+
+
+    private double roundDecimal(double value, final int decimalPlace) {
+        BigDecimal bd = new BigDecimal(value);
+
+        bd = bd.setScale(decimalPlace, RoundingMode.HALF_UP);
+        value = bd.doubleValue();
+
+        return value;
+    }
+
+    private double convertSpeed(double speed) {
+        return ((speed * Constants.HOUR_MULTIPLIER) * Constants.UNIT_MULTIPLIERS[measurement_index]);
+    }
+
+
+
+
+
+
+    public boolean isMarkerForDeletionInitialized() {
+        return markerForDeletion != null;
+    }
+
+
+
+    private boolean isMarkerOnArray(ArrayList<Marker> array, Double Latitude, Double Longitude) {
+        Marker current;
+        for (int c = 0; c < array.size(); c++) {
+            current = array.get(c);
+            if ((current.getPosition().latitude == Latitude) && (current.getPosition().longitude == Longitude))
+                return true;
+        }
+        return false;
+    }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -579,6 +526,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
             alert.dismiss();
             alert = null;
         }
+        mPresenter.onDestroy(getActivity().isChangingConfigurations());
     }
 
     @Override
@@ -587,38 +535,6 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
     }
 
-    public void drawPath(String result, Marker marker) {
-        try {
-            //Tranform the string into a json object
-            final JSONObject json = new JSONObject(result);
-            JSONArray routeArray = json.getJSONArray("routes");
-            JSONObject routes = routeArray.getJSONObject(0);
-            JSONObject overviewPolylines = routes.getJSONObject("overview_polyline");
-            String encodedString = overviewPolylines.getString("points");
-            List<LatLng> list = decodePoly(encodedString);
-            Polyline line = mMap.addPolyline(new PolylineOptions()
-                    .addAll(list)
-                    .width(12)
-                    .color(Color.parseColor("#05b1fb"))//Google maps blue color
-                    .geodesic(true)
-            );
-            marker.setTag(line);
-            markerList.add(marker);
-            polyLines.add(line);
-           /*
-           for(int z = 0; z<list.size()-1;z++){
-                LatLng src= list.get(z);
-                LatLng dest= list.get(z+1);
-                Polyline line = mMap.addPolyline(new PolylineOptions()
-                .add(new LatLng(src.latitude, src.longitude), new LatLng(dest.latitude,   dest.longitude))
-                .width(2)
-                .color(Color.BLUE).geodesic(true));
-            }
-           */
-        } catch (JSONException e) {
-
-        }
-    }
 
     private List<LatLng> decodePoly(String encoded) {
 
@@ -663,36 +579,10 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
         mMap.setInfoWindowAdapter(this);
         mMap.setOnMapClickListener(this);
         enableMyLocation();
-        DataRequestManager.getInstance().setUpMap(getActivity(), callback);
+        mPresenter.setUpMapDemand(getActivity(), callback);
     }
 
-    private void setUpMapIfNeeded() {
-        // Do a null check to confirm that we have not already instantiated the map.
-        if (mMap == null) {
-            ((SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.map))
-                    .getMapAsync(this);
-        }
-    }
 
-    public void enableMyLocation() {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-            if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                // Permission to access the location is missing.
-                if (permissionRequestCounter == 0) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
-                    }
-
-                    permissionRequestCounter++;
-                }
-            } else if (mMap != null) {
-                // Access to the location has been granted to the app.
-                mMap.setMyLocationEnabled(true);
-            }
-
-        }
-    }
 
     @Override
     public boolean onMyLocationButtonClick() {
@@ -705,7 +595,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
         AutostopSettings.checkGps(getContext());
         final LocationManager manager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            checkInCurrentPosition(getContext());
+            mPresenter.notifyDropMarker(mPresenter.checkInCurrentPosition(getContext()));
             mCheckOutButton.setClickable(true);
             if (isMarkerForDeletionInitialized()) {
                 if (markerForDeletionDestination != null)
@@ -715,7 +605,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
                         .draggable(true)
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
                 LatLng position = markerForDeletionDestination.getPosition();
-                uploadingPosition(position, mChosenMode);
+                mPresenter.uploadingPosition(getActivity(),position, mChosenMode);
                 AutostopSettings.saveBoolean("mCheckOutForDriverButton", true);
                 if (mChosenMode)
                     mCheckOutButton.setClickable(true);
@@ -737,7 +627,7 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
             markerList.remove(markerList.indexOf(marker));
         } else {
             LatLng latLng = marker.getPosition();
-            Positions searchedPosition = DataRequestManager.searchList(latLng.latitude, latLng.longitude);
+            Positions searchedPosition = mPresenter.searchList(latLng.latitude, latLng.longitude);
             if (searchedPosition != null) {
                 url = makeURL(searchedPosition.getLatitude(), searchedPosition.getLongitude(), searchedPosition.getLatitudeDestination(), searchedPosition.getLongitudeDestination());
                 new connectAsyncTask(url, marker).execute();
@@ -799,6 +689,13 @@ public class MapViewFragment extends Fragment implements GoogleApiClient.Connect
             if (savedInstanceState.keySet().contains(LOCATION_KEY))
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
         }
+    }
+
+    private void setupMVP() {
+        MapPresenter mapPresenter=new MapPresenter(this);
+        MapModel mapModel=new MapModel(mapPresenter);
+        mapPresenter.setModel(mapModel);
+        mPresenter=mapPresenter;
     }
 
     public void startIntentService(Marker marker) {

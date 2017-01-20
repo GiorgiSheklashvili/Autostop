@@ -1,26 +1,13 @@
-package com.example.gio.autostop.user_interface.activities;
+package com.example.gio.autostop.view;
 
 
-import android.content.Context;
-import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.Uri;
-import android.provider.Settings;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.Toast;
 
-import com.example.gio.autostop.MVP_Interfaces;
 import com.example.gio.autostop.R;
 import com.example.gio.autostop.helper.Constants;
-import com.example.gio.autostop.user_interface.fragments.MainFragment;
-import com.example.gio.autostop.user_interface.fragments.MapViewFragment;
+import com.example.gio.autostop.presenter.MapPresenter;
 
 
 public class MainActivity extends AppCompatActivity implements MainFragment.onChooseModeListener{
@@ -31,17 +18,20 @@ public class MainActivity extends AppCompatActivity implements MainFragment.onCh
         if (savedInstanceState != null){
             return;
         }
+
         MainFragment mainFragment = new MainFragment();
         getSupportFragmentManager().beginTransaction().add(R.id.fragment_container_main, mainFragment).commit();
     }
+
+
     @Override
     public void notifyChosenMode(boolean chosenMode) {
-        MapViewFragment mapViewFragment = new MapViewFragment();
+        MapFragment mapFragment = new MapFragment();
         Bundle args = new Bundle();
         args.putBoolean(Constants.chosenMode, chosenMode);
-        mapViewFragment.setArguments(args);
+        mapFragment.setArguments(args);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container_main, mapViewFragment);
+        transaction.replace(R.id.fragment_container_main, mapFragment);
         transaction.addToBackStack(null);
         transaction.commit();
     }

@@ -1,4 +1,4 @@
-package com.example.gio.autostop.user_interface;
+package com.example.gio.autostop;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -13,8 +13,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
-
-import com.example.gio.autostop.R;
 
 
 public class TrapezoidDrawableView extends View {

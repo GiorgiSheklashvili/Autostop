@@ -1,10 +1,9 @@
-package com.example.gio.autostop.user_interface.fragments;
+package com.example.gio.autostop.view;
 
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,12 +14,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.gio.autostop.MVP_Interfaces;
 import com.example.gio.autostop.helper.AutostopSettings;
-import com.example.gio.autostop.helper.Constants;
 import com.example.gio.autostop.R;
 import com.example.gio.autostop.helper.OnSwipeTouchListener;
-import com.example.gio.autostop.user_interface.activities.MainActivity;
+import com.example.gio.autostop.presenter.MapPresenter;
 
 
 public class MainFragment extends Fragment {
@@ -46,6 +43,7 @@ public class MainFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_main, container, false);
     }
+
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
