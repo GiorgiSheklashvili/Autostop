@@ -41,10 +41,6 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
             throw new NullPointerException("View is unavailable");
     }
 
-    @Override
-    public void notifyDropMarker(LatLng newLatLng) {
-        getView().dropMarkerOnMap(newLatLng);
-    }
 
     @Override
     public void setView(MVP_Interfaces.RequiredViewOps view) {
@@ -89,10 +85,7 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
         return getView().notifyGetLastKnownLocation(context);
     }
 
-    @Override
-    public void uploadingPosition(LatLng destinationPosition, Boolean chosenMode) {
 
-    }
 
     @Override
     public void uploadingPosition(Activity activity, LatLng destinationPosition, Boolean chosenMode) {
@@ -104,24 +97,5 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
         getView().gpsManagerStart(destinationPosition, chosenMode);
     }
 
-    @Override
-    public void checkInReminderAlertMessage(Context context) {
 
-    }
-
-    @Override
-    public void showDestinationAlertDialog() {
-
-    }
-
-
-    @Override
-    public void setUpMapIfNeeded() {
-
-    }
-
-    @Override
-    public void enableMyLocation() {
-
-    }
 }

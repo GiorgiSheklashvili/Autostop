@@ -20,21 +20,11 @@ public class MVP_Interfaces {
     public interface RequiredViewOps {
         void notifyDeletedMarkers();
 
-        void dropMarkerOnMap(LatLng newLatLng);
-
         Location notifyGetLastKnownLocation(Context context);
 
         void gpsManagerStart(LatLng destinationPosition, final Boolean chosenMode);
 
-        void checkInReminderAlertMessage(final Context context);
 
-        void showDestinationAlertDialog();
-
-        void drawPath(String result, Marker marker);
-
-        void setUpMapIfNeeded();
-
-        void enableMyLocation();
     }
 
     /**
@@ -43,7 +33,6 @@ public class MVP_Interfaces {
      * View to Presenter
      */
     public interface ProvidedPresenterOps {
-        void notifyDropMarker(LatLng newLatLng);
 
         void setView(RequiredViewOps view);
 
@@ -71,19 +60,9 @@ public class MVP_Interfaces {
 
         Location getLastKnownLocation(Context context);
 
-        void uploadingPosition(LatLng destinationPosition, final Boolean chosenMode);
-
         void gpsManagerStart(LatLng destinationPosition, final Boolean chosenMode);
 
-        void checkInReminderAlertMessage(final Context context);
 
-        void showDestinationAlertDialog();
-
-//        void drawPath(String result, Marker marker);
-
-        void setUpMapIfNeeded();
-
-        void enableMyLocation();
     }
 
     /**

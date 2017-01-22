@@ -37,7 +37,7 @@ import java.util.List;
 public class MapModel implements MVP_Interfaces.ProvidedModelOps {
     private MVP_Interfaces.RequiredPresenterOps mPresenter;
     private LocationManager locationManager;
-    private List<Positions> positions = new ArrayList<>();
+    private List<Positions> positionList = new ArrayList<>();
     private Positions tempPosition;
     private Location location;
     private LatLng newLatLng;
@@ -73,7 +73,6 @@ public class MapModel implements MVP_Interfaces.ProvidedModelOps {
         if (location == null)
             location = mPresenter.getLastKnownLocation(context);
         newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-
         return newLatLng;
     }
 
@@ -98,7 +97,7 @@ public class MapModel implements MVP_Interfaces.ProvidedModelOps {
                             Boolean kindOfUser = Boolean.valueOf(jsonObject.getString("kindOfUser"));
                             Double longitudeDestination = jsonObject.getDouble("longitudeDestination");
                             tempPosition = new Positions(latitude, longitude, latitudeDestination, longitudeDestination, kindOfUser, mac, android_id);
-                            positions.add(tempPosition);
+                            positionList.add(tempPosition);
                             callback.onRequestedLoaded(latitude, longitude, mac, android_id, latitudeDestination, longitudeDestination, kindOfUser);
                         }
                     } else {
@@ -119,9 +118,9 @@ public class MapModel implements MVP_Interfaces.ProvidedModelOps {
     }
 
     public Positions searchList(Double latitude, Double longitude) {
-        for (int i = 0; i < positions.size(); i++) {
-            if (positions.get(i).getLatitude() == latitude && positions.get(i).getLongitude() == longitude)
-                return positions.get(i);
+        for (int i = 0; i < positionList.size(); i++) {
+            if (positionList.get(i).getLatitude() == latitude && positionList.get(i).getLongitude() == longitude)
+                return positionList.get(i);
         }
         return null;
 
@@ -169,14 +168,18 @@ public class MapModel implements MVP_Interfaces.ProvidedModelOps {
         if (!chosenMode) {
             AutostopSettings.saveBoolean("passengerIconAlreadyCreated", true);
         }
+        else
+        {
+            AutostopSettings.saveBoolean("carIconAlreadyCreated", true);
+        }
         AutostopSettings.saveBoolean("mCheckOutButton", true);
-        AutostopSettings.saveBoolean("mCheckOutForDriverButton", true);
 //        mChosenMode = chosenMode;
         if (location == null) {
             newLatLng = new LatLng(AutostopSettings.getLong("Latitude"), AutostopSettings.getLong("Longitude"));
         }
         String deviceId = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.ANDROID_ID);
         position = new Positions(newLatLng.latitude, newLatLng.longitude, destinationPosition.latitude, destinationPosition.longitude, chosenMode, getWifiMacAddress(), deviceId);
+        positionList.add(position);
         Response.Listener<String> responseListener = new Response.Listener<String>() {
             @Override
             public void onResponse(String s) {

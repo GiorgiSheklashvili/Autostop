@@ -71,7 +71,7 @@ import java.util.List;
 
 public class MapFragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         LocationListener, OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMapLongClickListener,
-        GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter, GoogleMap.OnMapClickListener,MVP_Interfaces.RequiredViewOps {
+        GoogleMap.OnMarkerClickListener, GoogleMap.InfoWindowAdapter, GoogleMap.OnMapClickListener,MVP_Interfaces.RequiredViewOps,MainFragment.onChooseModeListener {
     private GoogleMap mMap;// Might be null if Google Play services APK is not available.
     private GoogleApiClient mGoogleApiClient;
     private CheckBox doNotShowAgain;
@@ -116,8 +116,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         setUpMapIfNeeded();
         showDestinationAlertDialog();
 //        getActivity().overridePendingTransition(R.anim.activity_open_translate, R.anim.activity_close_scale);//???
-        if (markerForDeletion == null)
-            AutostopSettings.saveBoolean("carIconAlreadyCreated", false);
         mCheckOutButton = (Button) view.findViewById(R.id.checkout);
         mCheckOutButton.setClickable(AutostopSettings.getBoolean("mCheckOutButton"));
         mCheckOutButton.setOnClickListener(new View.OnClickListener() {
@@ -175,7 +173,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                 if (myMac.equals(mac) && deviceId.equals(android_id)) {
                     markerForDeletion = mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)));
                     if (!kindOfUser) {
-
                         markerForDeletion.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.passenger));
                         AutostopSettings.saveBoolean("passengerIconAlreadyCreated", true);
                     } else {
@@ -197,7 +194,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                 }
         }
     };
-    @Override
     public void dropMarkerOnMap(LatLng newLatLng) {
         if (!mChosenMode) {
             if (!AutostopSettings.getBoolean("passengerIconAlreadyCreated")) {
@@ -267,7 +263,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                     if (speedDouble > Constants.Speed_Margin) {//manqanit mgzavroba
                         if (chosenMode) {
                             lastSpeed = speedDouble;
-                            mPresenter.notifyDropMarker(mPresenter.checkInCurrentPosition(getContext()));
+                            dropMarkerOnMap(mPresenter.checkInCurrentPosition(getContext()));
                             mPresenter.uploadingPosition(getActivity(),tempDestinationPosition, chosenMode);
                             Toast.makeText(getContext(), "driver " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
                         }
@@ -284,7 +280,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
             });
     }
 
-    @Override
     public void checkInReminderAlertMessage(Context context) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setMessage("You have gone from previous place,it is strongly recommended to check in new position")
@@ -299,7 +294,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         lastSpeed = 0.0;
     }
 
-    @Override
     public void showDestinationAlertDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater DialogInflater = LayoutInflater.from(getActivity());
@@ -324,7 +318,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
             dialog.show();
     }
 
-    @Override
     public void drawPath(String result, Marker marker) {
         try {
             //Tranform the string into a json object
@@ -349,7 +342,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         }
     }
 
-    @Override
     public void setUpMapIfNeeded() {
         if (mMap == null) {
             ((SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.map))
@@ -357,7 +349,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         }
     }
 
-    @Override
     public void enableMyLocation() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
@@ -580,6 +571,10 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         mMap.setOnMapClickListener(this);
         enableMyLocation();
         mPresenter.setUpMapDemand(getActivity(), callback);
+        if (markerForDeletion == null){
+            AutostopSettings.saveBoolean("carIconAlreadyCreated", false);
+            AutostopSettings.saveBoolean("passengerIconAlreadyCreated", false);
+        }
     }
 
 
@@ -595,21 +590,23 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         AutostopSettings.checkGps(getContext());
         final LocationManager manager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            mPresenter.notifyDropMarker(mPresenter.checkInCurrentPosition(getContext()));
+            dropMarkerOnMap(mPresenter.checkInCurrentPosition(getContext()));
             mCheckOutButton.setClickable(true);
-            if (isMarkerForDeletionInitialized()) {
-                if (markerForDeletionDestination != null)
-                    markerForDeletionDestination.remove();
-                markerForDeletionDestination = mMap.addMarker(new MarkerOptions()
-                        .position(latLng)
-                        .draggable(true)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
-                LatLng position = markerForDeletionDestination.getPosition();
-                mPresenter.uploadingPosition(getActivity(),position, mChosenMode);
-                AutostopSettings.saveBoolean("mCheckOutForDriverButton", true);
-                if (mChosenMode)
-                    mCheckOutButton.setClickable(true);
-            }
+            dropDestinationMarker(latLng);
+        }
+    }
+    public void dropDestinationMarker(LatLng latLng){
+        if (isMarkerForDeletionInitialized()) {
+            if (markerForDeletionDestination != null)
+                markerForDeletionDestination.remove();
+            markerForDeletionDestination = mMap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .draggable(true)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
+            LatLng position = markerForDeletionDestination.getPosition();
+            mPresenter.uploadingPosition(getActivity(),position, mChosenMode);
+            if (mChosenMode)
+                mCheckOutButton.setClickable(true);
         }
     }
 
@@ -632,7 +629,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                 url = makeURL(searchedPosition.getLatitude(), searchedPosition.getLongitude(), searchedPosition.getLatitudeDestination(), searchedPosition.getLongitudeDestination());
                 new connectAsyncTask(url, marker).execute();
             } else
-                return false;
+                return true;
         }
         return true;
     }
@@ -649,7 +646,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         urlString.append(",");
         urlString.append(Double.toString(destLog));
         urlString.append("&sensor=false&mode=driving&alternatives=true");
-        urlString.append("&key=AIzaSyBGYJ8ANoa86LEWyATfCkOHgWoH_yG_6yc");
+        urlString.append("&key=AIzaSyAoustpvxTVV1xDwJ1ouCBE5ti2LU3WCzo");
         return urlString.toString();
     }
 
@@ -707,6 +704,11 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         intent.putExtra(Constants.RECEIVER, mResultReceiver);
         intent.putExtra(Constants.LOCATION_DATA_EXTRA, loc);
         getActivity().startService(intent);
+    }
+
+    @Override
+    public void notifyChosenMode(boolean chosen) {
+        mChosenMode=chosen;
     }
 
     private class connectAsyncTask extends AsyncTask<Void, Void, String> {

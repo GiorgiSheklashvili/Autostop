@@ -25,7 +25,7 @@ public class MainFragment extends Fragment {
     private TextView passenger;
     private View slideView;
     private LinearLayout chooseButtonLayout;
-    private Boolean choose = false;
+    private Boolean choose;
     private ImageView goImageView;
     private onChooseModeListener mCallback;
 
@@ -47,6 +47,7 @@ public class MainFragment extends Fragment {
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        choose=false;
         slideView = view.findViewById(R.id.slide_view);
         passenger = (TextView) view.findViewById(R.id.passenger);
         driver = (TextView) view.findViewById(R.id.driver);
