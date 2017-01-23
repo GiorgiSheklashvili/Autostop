@@ -22,7 +22,6 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
 
     public void setModel(MVP_Interfaces.ProvidedModelOps model) {
         this.mModel = model;
-
     }
 
     @Override
@@ -45,7 +44,6 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
     @Override
     public void setView(MVP_Interfaces.RequiredViewOps view) {
         mView = new WeakReference<>(view);
-
     }
 
     @Override
