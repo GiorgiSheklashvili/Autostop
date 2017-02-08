@@ -3,16 +3,18 @@
     android:id="@+id/fragment_container"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    tools:context=".view.AddressFragment"
-    android:background="@android:color/transparent">
+    android:background="@android:color/transparent"
+    tools:context=".view.AddressFragment">
+
     <TextView
         android:id="@+id/address"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         android:gravity="center_horizontal"
         android:text=""
-        android:layout_gravity="center_horizontal"
-        android:textSize="22sp"/>
+        android:textSize="22sp" />
+
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"

@@ -5,7 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.location.Location;
 
-import com.example.gio.autostop.server.Positions;
+import com.example.gio.autostop.model.Position;
 import com.example.gio.autostop.interfaces.MapRequestRequestCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -19,11 +19,11 @@ public class MVP_Interfaces {
      */
     public interface RequiredViewOps {
         void notifyDeletedMarkers();
+        Location getLastKnownLocationFiveAttempt(Context context);
 
         Location notifyGetLastKnownLocation(Context context);
 
         void gpsManagerStart(LatLng destinationPosition, final Boolean chosenMode);
-
 
     }
 
@@ -38,17 +38,17 @@ public class MVP_Interfaces {
 
         void onDestroy(boolean isChangingConfiguration);
 
-        void notifyToDeleteMarkers(Marker markerForDeletion, final Activity activity);
+        void notifyToDeleteMarkers(Marker markerForDeletion, final Context context);
 
         LatLng checkInCurrentPosition(Context context);
 
         void setUpMapDemand(Activity activity, MapRequestRequestCallback callback);
 
-        Positions searchList(Double latitude, Double longitude);
+        Position searchList(Double latitude, Double longitude);
 
         String getWifiAddress();
 
-        void uploadingPosition(Activity activity, LatLng destinationPosition, final Boolean chosenMode);
+        void uploadingPosition(Context context, LatLng destinationPosition, final Boolean chosenMode);
     }
 
     /**
@@ -59,6 +59,8 @@ public class MVP_Interfaces {
         void notifyDeleteDMarkers();
 
         Location getLastKnownLocation(Context context);
+
+        Location getLastKnownLocationFiveAttempt(Context context);
 
         void gpsManagerStart(LatLng destinationPosition, final Boolean chosenMode);
 
@@ -75,14 +77,14 @@ public class MVP_Interfaces {
 
         String getWifiMacAddress();
 
-        void setUpMap(final Activity activity, final MapRequestRequestCallback callback);
+        void setUpMap(final Context context, final MapRequestRequestCallback callback);
 
-        Positions searchList(Double latitude, Double longitude);
+        Position searchList(Double latitude, Double longitude);
 
         void onDestroy(boolean isChangingConfiguration);
 
-        void deleteMarkers(Marker markerForDeletion, final Activity activity);
+        void deleteMarkers(Marker markerForDeletion, final Context context);
 
-        void uploadingPosition(Activity activity, LatLng destinationPosition, final Boolean chosenMode);
+        void uploadingPosition(Context context, LatLng destinationPosition, final Boolean chosenMode);
     }
 }

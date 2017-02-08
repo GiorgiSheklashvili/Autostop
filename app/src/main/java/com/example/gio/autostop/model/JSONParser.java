@@ -1,4 +1,4 @@
-package com.example.gio.autostop.services;
+package com.example.gio.autostop.model;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;

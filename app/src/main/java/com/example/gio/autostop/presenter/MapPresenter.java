@@ -5,10 +5,11 @@ import android.content.Context;
 import android.location.Location;
 
 import com.example.gio.autostop.MVP_Interfaces;
-import com.example.gio.autostop.server.Positions;
+import com.example.gio.autostop.model.Position;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.example.gio.autostop.interfaces.MapRequestRequestCallback;
+
 import java.lang.ref.WeakReference;
 
 public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_Interfaces.RequiredPresenterOps {
@@ -28,7 +29,7 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
     public void onDestroy(boolean isChangingConfiguration) {
         mView = null;
         mModel.onDestroy(isChangingConfiguration);
-        if ( !isChangingConfiguration ) {
+        if (!isChangingConfiguration) {
             mModel = null;
         }
     }
@@ -47,8 +48,8 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
     }
 
     @Override
-    public void notifyToDeleteMarkers(Marker markerForDeletion, Activity activity) {
-        mModel.deleteMarkers(markerForDeletion, activity);
+    public void notifyToDeleteMarkers(Marker markerForDeletion, Context context) {
+        mModel.deleteMarkers(markerForDeletion, context);
     }
 
     @Override
@@ -62,7 +63,7 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
     }
 
     @Override
-    public Positions searchList(Double latitude, Double longitude) {
+    public Position searchList(Double latitude, Double longitude) {
         return mModel.searchList(latitude, longitude);
     }
 
@@ -83,11 +84,14 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
         return getView().notifyGetLastKnownLocation(context);
     }
 
-
+    @Override
+    public Location getLastKnownLocationFiveAttempt(Context context) {
+        return getView().getLastKnownLocationFiveAttempt(context);
+    }
 
     @Override
-    public void uploadingPosition(Activity activity, LatLng destinationPosition, Boolean chosenMode) {
-        mModel.uploadingPosition(activity, destinationPosition, chosenMode);
+    public void uploadingPosition(Context context, LatLng destinationPosition, Boolean chosenMode) {
+        mModel.uploadingPosition(context, destinationPosition, chosenMode);
     }
 
     @Override

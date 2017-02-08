@@ -14,7 +14,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.ResultReceiver;
+import android.os.Looper;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -39,12 +39,13 @@ import com.example.gio.autostop.R;
 import com.example.gio.autostop.helper.StateMaintainer;
 import com.example.gio.autostop.model.MapModel;
 import com.example.gio.autostop.presenter.MapPresenter;
-import com.example.gio.autostop.server.Positions;
+import com.example.gio.autostop.model.Position;
 import com.example.gio.autostop.helper.GPSManager;
 import com.example.gio.autostop.interfaces.GPSCallback;
 import com.example.gio.autostop.interfaces.MapRequestRequestCallback;
+import com.example.gio.autostop.services.AddressResultReceiver;
 import com.example.gio.autostop.services.FetchAddressIntentService;
-import com.example.gio.autostop.services.JSONParser;
+import com.example.gio.autostop.model.JSONParser;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -139,6 +140,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
             }
         });
 
+
     }
 
     @Override
@@ -197,6 +199,10 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                     AutostopSettings.saveLong("Latitude", Double.doubleToLongBits(lat));
                     AutostopSettings.saveLong("Longitude", Double.doubleToLongBits(lon));
                     tempLatLng = new LatLng(latitudeDestination, longitudeDestination);
+                    if (!mCheckOutButton.isClickable()) {
+                        mCheckOutButton.setEnabled(true);
+                        AutostopSettings.saveBoolean("mCheckOutButton", true);
+                    }
                     gpsManagerStart(tempLatLng, kindOfUser);
                 } else {
                     markerVariable = mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)));
@@ -230,12 +236,13 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     public void notifyDeletedMarkers() {
         if (markerForDeletionDestination != null)
             markerForDeletionDestination.remove();
-        if (!mChosenMode) {
-            AutostopSettings.saveBoolean("mCheckOutButton", false);
-        } else {
-            AutostopSettings.saveBoolean("mCheckOutForDriverButton", false);
-            mCheckOutButton.setClickable(false);
-        }
+//        if (!mChosenMode) {
+//            AutostopSettings.saveBoolean("mCheckOutForDriverButton", false);
+//
+//        } else {
+        AutostopSettings.saveBoolean("mCheckOutButton", false);
+        mCheckOutButton.setClickable(false);
+//        }
 
     }
 
@@ -263,6 +270,41 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     }
 
     @Override
+    public Location getLastKnownLocationFiveAttempt(Context context) {
+        Location location = null;
+        if (ContextCompat.checkSelfPermission(context,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && locationManager != null) {
+
+            String provider;
+
+            provider = locationManager.getProvider(LocationManager.NETWORK_PROVIDER).getName();
+
+            if (Looper.myLooper() == null) {
+                Looper.prepare();
+            }
+
+            int count = 5;
+            for (int i = 0; i < count; i++) {
+
+                locationManager.requestSingleUpdate(provider, null, Looper.myLooper());
+                location = locationManager.getLastKnownLocation(provider);
+
+                if (location != null) {
+                    break;
+                } else {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        return location;
+    }
+
+    @Override
     public void gpsManagerStart(LatLng destinationPosition, final Boolean chosenMode) {
         gpsManager = new GPSManager();
         gpsManager.startListening(getContext(), mGoogleApiClient);
@@ -279,7 +321,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                     if (chosenMode) {
                         lastSpeed = speedDouble;
                         dropMarkerOnMap(mPresenter.checkInCurrentPosition(getContext()));
-                        mPresenter.uploadingPosition(getActivity(), tempDestinationPosition, chosenMode);
+                        mPresenter.uploadingPosition(getContext(), tempDestinationPosition, chosenMode);
                         Toast.makeText(getContext(), "driver " + speedDouble.toString(), Toast.LENGTH_SHORT).show();
                     }
                     Toast.makeText(getContext(), "passenger is in car" + speedDouble.toString(), Toast.LENGTH_SHORT).show();
@@ -614,7 +656,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                     .draggable(true)
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
             LatLng position = markerForDeletionDestination.getPosition();
-            mPresenter.uploadingPosition(getActivity(), position, mChosenMode);
+            mPresenter.uploadingPosition(getContext(), position, mChosenMode);
             if (mChosenMode)
                 mCheckOutButton.setClickable(true);
         }
@@ -634,7 +676,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
             markerList.remove(markerList.indexOf(marker));
         } else {
             LatLng latLng = marker.getPosition();
-            Positions searchedPosition = mPresenter.searchList(latLng.latitude, latLng.longitude);
+            Position searchedPosition = mPresenter.searchList(latLng.latitude, latLng.longitude);
             if (searchedPosition != null) {
                 url = makeURL(searchedPosition.getLatitude(), searchedPosition.getLongitude(), searchedPosition.getLatitudeDestination(), searchedPosition.getLongitudeDestination());
                 new connectAsyncTask(url, marker).execute();
@@ -669,6 +711,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     @Override
     public View getInfoContents(Marker marker) {
 //        markerClickView = getLayoutInflater(null).inflate(R.layout.marker_text_layout, null);
+//        mLocationAddressTextView = (TextView) markerClickView.findViewById(R.id.address1);
         return null;
     }
 
@@ -702,18 +745,20 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         mStateMaintainer = new StateMaintainer(myContext.getSupportFragmentManager(), MapFragment.class.getName());
         presenter = new MapPresenter(this);
         if (mStateMaintainer.firstTimeIn()) {
-            model = new MapModel(presenter);
+            model = new MapModel();
+            model.setPresenter(presenter);
             presenter.setModel(model);
             // Add Presenter and Model to StateMaintainer
             mStateMaintainer.put(presenter);
             mStateMaintainer.put(model);
-                    }
+        }
         // get the Presenter from StateMaintainer
         else {
             mPresenter = mStateMaintainer.get(MapPresenter.class.getName());
             // Updated the View in Presenter
             mPresenter.setView(this);
             model = mStateMaintainer.get(MapModel.class.getName());
+            model.setPresenter(presenter);
             presenter.setModel(model);
         }
         // Set the Presenter as a interface
@@ -772,19 +817,5 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         }
     }
 
-    class AddressResultReceiver extends ResultReceiver {
-        private int CREATOR;
 
-        public AddressResultReceiver(Handler handler) {
-            super(handler);
-        }
-
-        @Override
-        protected void onReceiveResult(int resultCode, Bundle resultData) {
-            super.onReceiveResult(resultCode, resultData);
-            mAddressOutput = resultData.getString(Constants.RESULT_DATA_KEY);
-            mLocationAddressTextView = (TextView) markerClickView.findViewById(R.id.address1);
-            mLocationAddressTextView.setText(mAddressOutput);
-        }
-    }
 }
