@@ -1,72 +1,27 @@
 {
   "project_info": {
-    "project_number": "11117188100",
-    "project_id": "autostop-1300"
+    "project_number": "1067605504659",
+    "firebase_url": "https://autostop-ab869.firebaseio.com",
+    "project_id": "autostop-ab869",
+    "storage_bucket": "autostop-ab869.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:11117188100:android:27d689d63f1b7a06",
-        "android_client_info": {
-          "package_name": "com.google.samples.quickstart.signin"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "11117188100-lj84e3qu23ki9k2u95nk9smj4nr2je2k.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.google.samples.quickstart.signin",
-            "certificate_hash": "B78589BF13AC65FA5EF206DC64BC0FD4AE03FB43"
-          }
-        },
-        {
-          "client_id": "11117188100-fddmhumulmqi47qeg04p4dj4lflgep70.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAQ0Eoz6AWwOhxLvGhC4RnCq4SuZsq2yl8"
-        }
-      ],
-      "services": {
-        "analytics_service": {
-          "status": 1
-        },
-        "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
-        },
-        "ads_service": {
-          "status": 1
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:11117188100:android:f87fda23bc334990",
+        "mobilesdk_app_id": "1:1067605504659:android:f87fda23bc334990",
         "android_client_info": {
           "package_name": "com.example.gio.autostop"
         }
       },
       "oauth_client": [
         {
-          "client_id": "11117188100-art54c9i83rlosp8b4681h26v3vdpapd.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.gio.autostop",
-            "certificate_hash": "B78589BF13AC65FA5EF206DC64BC0FD4AE03FB43"
-          }
-        },
-        {
-          "client_id": "11117188100-fddmhumulmqi47qeg04p4dj4lflgep70.apps.googleusercontent.com",
+          "client_id": "1067605504659-dfqtatciqmuoomkhr5l8ph73urs6hich.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAQ0Eoz6AWwOhxLvGhC4RnCq4SuZsq2yl8"
+          "current_key": "AIzaSyDeF3ZPOPhvNlQ7XXD03wGxwKb0gvZaUpY"
         }
       ],
       "services": {
@@ -78,7 +33,7 @@
           "other_platform_oauth_client": []
         },
         "ads_service": {
-          "status": 1
+          "status": 2
         }
       }
     }

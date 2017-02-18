@@ -85,11 +85,6 @@ public class MapPresenter implements MVP_Interfaces.ProvidedPresenterOps, MVP_In
     }
 
     @Override
-    public Location getLastKnownLocationFiveAttempt(Context context) {
-        return getView().getLastKnownLocationFiveAttempt(context);
-    }
-
-    @Override
     public void uploadingPosition(Context context, LatLng destinationPosition, Boolean chosenMode) {
         mModel.uploadingPosition(context, destinationPosition, chosenMode);
     }

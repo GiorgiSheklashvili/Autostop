@@ -19,7 +19,6 @@ public class MVP_Interfaces {
      */
     public interface RequiredViewOps {
         void notifyDeletedMarkers();
-        Location getLastKnownLocationFiveAttempt(Context context);
 
         Location notifyGetLastKnownLocation(Context context);
 
@@ -60,10 +59,7 @@ public class MVP_Interfaces {
 
         Location getLastKnownLocation(Context context);
 
-        Location getLastKnownLocationFiveAttempt(Context context);
-
         void gpsManagerStart(LatLng destinationPosition, final Boolean chosenMode);
-
 
     }
 

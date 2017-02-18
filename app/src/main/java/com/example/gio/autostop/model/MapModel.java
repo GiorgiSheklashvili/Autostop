@@ -3,9 +3,9 @@ package com.example.gio.autostop.model;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationManager;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
@@ -22,6 +22,7 @@ import com.example.gio.autostop.server.UploadPositionRequest;
 import com.example.gio.autostop.interfaces.MapRequestRequestCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.firebase.crash.FirebaseCrash;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,7 +35,6 @@ import java.util.List;
 
 public class MapModel implements MVP_Interfaces.ProvidedModelOps {
     private MVP_Interfaces.RequiredPresenterOps mPresenter;
-    private LocationManager locationManager;
     public List<Position> positionList = new ArrayList<>();
     private Position tempPosition;
     private Location location;
@@ -57,33 +57,40 @@ public class MapModel implements MVP_Interfaces.ProvidedModelOps {
     }
 
     @Override
-    public LatLng checkInCurrentPosition(Context context) {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return null;
+    public LatLng checkInCurrentPosition(final Context context) {
+        try {
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                FirebaseCrash.log("permission is not granted from checkin");
+                FirebaseCrash.report(new Exception("permission is not granted from checkin"));
+                return null;
+            }
+            if (location == null) {
+                location = mPresenter.getLastKnownLocation(context);
+            }
+            if (location == null) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                builder.setMessage("Check In Failed")
+                        .setPositiveButton("retry", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                checkInCurrentPosition(context);
+                            }
+                        })
+                        .setNegativeButton("close", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                dialogInterface.dismiss();
+                            }
+                        })
+                        .create()
+                        .show();
+            }
+            newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+        } catch (Exception ex) {
+            FirebaseCrash.log("location is null");
+            FirebaseCrash.report(ex);
+
         }
-        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        Location locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        Location locationNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        long GPSLocationTime = 0;
-        if (null != locationGPS) {
-            GPSLocationTime = locationGPS.getTime();
-        }
-        long NetLocationTime = 0;
-        if (null != locationNet) {
-            NetLocationTime = locationNet.getTime();
-        }
-        if (0 < GPSLocationTime - NetLocationTime) {
-            location = locationGPS;
-        } else {
-            location = locationNet;
-        }
-        if (location == null) {
-            location = mPresenter.getLastKnownLocation(context);
-        }
-        if (location == null) {
-            location = mPresenter.getLastKnownLocationFiveAttempt(context);
-        }
-        newLatLng = new LatLng(location.getLatitude(), location.getLongitude());
         return newLatLng;
     }
 

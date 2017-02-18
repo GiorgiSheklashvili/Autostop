@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.Context;
 
 import com.example.gio.autostop.helper.AutostopSettings;
+import com.google.firebase.FirebaseApp;
 
 
 public class App extends Application{
@@ -13,6 +14,7 @@ public class App extends Application{
         super.onCreate();
         AutostopSettings.initialize(this);
         App.context = getApplicationContext();
+        FirebaseApp.initializeApp(this);
     }
     public static Context getAppContext() {
         return App.context;

@@ -48,6 +48,7 @@ import com.example.gio.autostop.services.FetchAddressIntentService;
 import com.example.gio.autostop.model.JSONParser;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -60,6 +61,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.firebase.crash.FirebaseCrash;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -111,7 +113,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     private Double lastSpeed = 0.0;
     public ArrayList<Marker> mMarkerCollection = new ArrayList<>();
     private String myMac, deviceId;
-    private LocationManager locationManager;
     private MVP_Interfaces.ProvidedPresenterOps mPresenter;
     private FragmentActivity myContext;
     StateMaintainer mStateMaintainer;
@@ -123,7 +124,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         super.onViewCreated(view, savedInstanceState);
         setUpMapIfNeeded();
         showDestinationAlertDialog();
-//        getActivity().overridePendingTransition(R.anim.activity_open_translate, R.anim.activity_close_scale);
         mCheckOutButton = (Button) view.findViewById(R.id.checkout);
         mCheckOutButton.setClickable(AutostopSettings.getBoolean("mCheckOutButton"));
         mCheckOutButton.setOnClickListener(new View.OnClickListener() {
@@ -249,59 +249,17 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
 
     @Override
     public Location notifyGetLastKnownLocation(Context context) {
-        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        List<String> providers = locationManager.getProviders(true);
-        Location bestLocation = null;
-        for (String provider : providers) {
+        Location mLastLocation;
+        if (mGoogleApiClient.isConnected()) {
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 return null;
-            }
-            Location l = locationManager.getLastKnownLocation(provider);
-            if (l == null) {
-                continue;
-            }
-            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
-                // Found best last known location: %s", l);
-                bestLocation = l;
+            } else {
+                mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                        mGoogleApiClient);
+                return mLastLocation;
             }
         }
-        return bestLocation;
-
-    }
-
-    @Override
-    public Location getLastKnownLocationFiveAttempt(Context context) {
-        Location location = null;
-        if (ContextCompat.checkSelfPermission(context,
-                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                && locationManager != null) {
-
-            String provider;
-
-            provider = locationManager.getProvider(LocationManager.NETWORK_PROVIDER).getName();
-
-            if (Looper.myLooper() == null) {
-                Looper.prepare();
-            }
-
-            int count = 5;
-            for (int i = 0; i < count; i++) {
-
-                locationManager.requestSingleUpdate(provider, null, Looper.myLooper());
-                location = locationManager.getLastKnownLocation(provider);
-
-                if (location != null) {
-                    break;
-                } else {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-        return location;
+        return null;
     }
 
     @Override
@@ -578,7 +536,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
     }
 
-
     private List<LatLng> decodePoly(String encoded) {
 
         List<LatLng> poly = new ArrayList<LatLng>();
@@ -641,9 +598,12 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         AutostopSettings.checkGps(getContext());
         final LocationManager manager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            dropMarkerOnMap(mPresenter.checkInCurrentPosition(getContext()));
-            mCheckOutButton.setClickable(true);
-            dropDestinationMarker(latLng);
+            LatLng loc = mPresenter.checkInCurrentPosition(getContext());
+            if (loc != null) {
+                dropMarkerOnMap(loc);
+                mCheckOutButton.setClickable(true);
+                dropDestinationMarker(latLng);
+            }
         }
     }
 
@@ -698,7 +658,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         urlString.append(",");
         urlString.append(Double.toString(destLog));
         urlString.append("&sensor=false&mode=driving&alternatives=true");
-        urlString.append("&key=AIzaSyAoustpvxTVV1xDwJ1ouCBE5ti2LU3WCzo");
+        urlString.append("&key=AIzaSyAM2uWSQAzOTQNsp1TimZZoaQ8VgaWgh90");
         return urlString.toString();
     }
 
