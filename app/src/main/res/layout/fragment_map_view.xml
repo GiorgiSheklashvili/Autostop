@@ -9,7 +9,7 @@
         class="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.example.gio.autostop.view.MainActivity" >
+        tools:context="com.home.gio.autostop.view.MainActivity" >
     <Button
         android:id="@+id/checkout"
         android:layout_marginRight="@dimen/button_margin_right"

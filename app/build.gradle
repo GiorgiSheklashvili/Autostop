@@ -3,7 +3,7 @@ android {
     compileSdkVersion 25
     buildToolsVersion "23.0.1"
     defaultConfig {
-        applicationId "com.example.gio.autostop"
+        applicationId "com.home.gio.autostop"
         minSdkVersion 15
         targetSdkVersion 25
         versionCode 1
@@ -12,7 +12,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            debuggable true
+            debuggable false
 
         }
     }
