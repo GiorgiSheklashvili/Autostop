@@ -7,10 +7,10 @@ This application helps hitchhikers and autostopers find cars for traveling.They 
 
 ![landingpage](screenshots/landingpage.gif)
 
-2.longpress on place you are going, to indicate your destination.
+2.Longpress on place you are going, to indicate your destination.
 
 ![longpress](screenshots/longpress.gif)
 
-3.tap on icon tu see it's destination
+3.Tap on icon tu see it's destination
 
 ![path](screenshots/tap.gif)
