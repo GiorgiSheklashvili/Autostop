@@ -17,7 +17,6 @@ public class MainActivity extends AppCompatActivity implements MainFragment.onCh
         if (savedInstanceState != null) {
             return;
         }
-
         MainFragment mainFragment = new MainFragment();
         getSupportFragmentManager().beginTransaction().add(R.id.fragment_container_main, mainFragment).commit();
     }

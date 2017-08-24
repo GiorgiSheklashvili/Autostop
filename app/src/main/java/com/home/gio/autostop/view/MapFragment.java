@@ -767,7 +767,8 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            progressDialog.dismiss();
+            if (progressDialog != null)
+                progressDialog.dismiss();
             progressDialog = null;
             if (result != null) {
                 drawPath(result, marker);

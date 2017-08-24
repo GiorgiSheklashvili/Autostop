@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 android {
     compileSdkVersion 25
-    buildToolsVersion "23.0.1"
+    buildToolsVersion '25.0.0'
     defaultConfig {
         applicationId "com.home.gio.autostop"
         minSdkVersion 15
         targetSdkVersion 25
-        versionCode 1
+        versionCode 3
         versionName "1.0"
     }
     buildTypes {

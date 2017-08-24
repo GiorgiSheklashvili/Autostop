@@ -63,7 +63,6 @@ public class MainFragment extends Fragment {
                                            }
                                        }
         );
-
         passenger.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
